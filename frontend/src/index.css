@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* MACCAN RMS Custom Styles */
+:root {
+  --green-900: #1a3a2a;
+  --green-700: #2d5016;
+  --green-600: #3a6b20;
+  --green-500: #4a8a2a;
+  --gold: #c8a951;
+  --gold-light: #f0e0a0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f2f5;
+  margin: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #2d5016; border-radius: 4px; }
