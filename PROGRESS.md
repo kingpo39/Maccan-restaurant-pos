@@ -163,7 +163,43 @@
 - Print-optimized CSS (no buttons, clean layout)
 - Bilingual headers (Persian + English)
 
-## Project Status: Phases 1-6 COMPLETE ✅
+## Phase 7: RBAC & Toast Notifications ✅
+
+### Backend - Granular RBAC
+- [x] Permission matrix: 5 roles × 40+ permissions (owner, manager, head_chef, server, inventory)
+- [x] `requirePermission()` middleware for fine-grained route protection
+- [x] `requireAnyPermission()` for OR-based access checks
+- [x] Auth login response includes permissions array for frontend
+- [x] GET /api/auth/me returns permissions for session refresh
+- [x] Analytics route protected with `requirePermission('analytics:view')`
+- [x] Backend: server role blocked from analytics → 403 "Insufficient permissions"
+
+### Frontend - Permission-Aware Navigation
+- [x] `permissions.js` config: page-to-permission mapping
+- [x] `PermissionRoute` wrapper: shows Access Denied screen for unauthorized pages
+- [x] Sidebar filters nav items by user permissions (server sees 7 items, owner sees 9)
+- [x] Role badge in sidebar (مالک/مدیر/سرآشپز/گارسون/انباردار)
+- [x] Access Denied screen with 🔒 icon and return-to-dashboard button
+- [x] AuthContext stores and exposes permissions array
+
+### Frontend - Toast Notification System
+- [x] ToastContext with success/error/warning/info methods
+- [x] Domain-specific toasts: orderPlaced, orderReady, inventoryAlert, stockReceived
+- [x] Animated slide-in toasts with auto-dismiss (5s default, 8s errors)
+- [x] Progress bar animation on each toast
+- [x] Wired to: logout event, order placement, KDS new order, KDS order ready, inventory receiving, stock alerts
+- [x] Toast container: fixed top-right, z-50, max-w-sm
+
+### Role Permission Summary
+| Role | Pages | Key Restrictions |
+|------|-------|------------------|
+| Owner | All 9 | Full access |
+| Manager | All 9 | No user management, no recipe delete |
+| Head Chef | 8 (no Analytics) | No pricing, no suppliers edit |
+| Server | 7 (no Inventory, no Analytics) | Read-only, can place orders |
+| Inventory | 6 (no Tables, KDS, Nutrition, Analytics) | Inventory + suppliers only |
+
+## Project Status: Phases 1-7 COMPLETE ✅
 
 ### Files Created
 ```

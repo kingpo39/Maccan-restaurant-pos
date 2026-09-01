@@ -4,11 +4,12 @@
 const express = require('express');
 const { getDb } = require('../db/connection');
 const { authenticate } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/permissions');
 
 const router = express.Router();
 
 // GET /api/analytics/overview — Full analytics data for charts
-router.get('/overview', authenticate, (req, res) => {
+router.get('/overview', authenticate, requirePermission('analytics:view'), (req, res) => {
   try {
     const db = getDb();
 

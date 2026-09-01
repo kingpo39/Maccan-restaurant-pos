@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getDb } = require('../db/connection');
 const { authenticate } = require('../middleware/auth');
+const { getRolePermissions } = require('../middleware/permissions');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'maccan_default_secret';
@@ -42,7 +43,8 @@ router.post('/login', (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        permissions: getRolePermissions(user.role)
       }
     });
   } catch (err) {
@@ -95,7 +97,10 @@ router.get('/me', authenticate, (req, res) => {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    res.json(user);
+    res.json({
+      ...user,
+      permissions: getRolePermissions(user.role)
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

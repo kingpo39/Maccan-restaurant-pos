@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import { useToast } from '../contexts/ToastContext';
 
 export default function InventoryPage() {
   const [tab, setTab] = useState('stock');
@@ -47,12 +48,25 @@ function StockLevels() {
   const [stock, setStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const toast = useToast();
 
   const load = async () => {
     setLoading(true);
     try {
       const params = filter === 'low' ? '?low_stock_only=true' : filter === 'expiring' ? '?expired_only=true' : '';
-      setStock(await api.get(`/inventory/stock${params}`));
+      const data = await api.get(`/inventory/stock${params}`);
+      setStock(data);
+      // Fire alerts for out-of-stock items on first load
+      if (filter === 'all') {
+        const outOfStock = data.filter(s => s.status === 'out_of_stock');
+        const expiring = data.filter(s => s.status === 'expiring' || s.status === 'near_expiry');
+        if (outOfStock.length > 0) {
+          toast.warning('مواد تمام شده ⚠️', `${outOfStock.length} ماده اولیه تمام شده است`);
+        }
+        if (expiring.length > 0) {
+          toast.warning('نزدیک انقضا ⏰', `${expiring.length} ماده نزدیک انقضا است`);
+        }
+      }
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -189,6 +203,7 @@ function ReceivingForm() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     api.get('/ingredients')
@@ -232,6 +247,9 @@ function ReceivingForm() {
       const res = await api.post('/inventory/receive', payload);
       setResult(res);
       setSelectedItems([]);
+      res.items?.forEach(item => {
+        toast.stockReceived(item.ingredient_name, item.received_qty);
+      });
     } catch (e) { setError(e.message); }
     setSaving(false);
   };

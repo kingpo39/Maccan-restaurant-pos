@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import { useToast } from '../contexts/ToastContext';
 
 export default function TablesPage() {
   return (
@@ -17,6 +18,7 @@ function TablesView() {
   const [loading, setLoading] = useState(true);
   const [showOrderForm, setShowOrderForm] = useState(null); // table or null
   const [orderResult, setOrderResult] = useState(null);
+  const toast = useToast();
 
   const load = async () => {
     setLoading(true);
@@ -130,7 +132,7 @@ function TablesView() {
         <OrderFormModal
           table={showOrderForm}
           onClose={() => { setShowOrderForm(null); setOrderResult(null); }}
-          onCreated={(order) => { setOrderResult(order); setShowOrderForm(null); load(); }}
+          onCreated={(order) => { setOrderResult(order); setShowOrderForm(null); load(); toast.orderPlaced(order.table_label, order.items?.length || 0); }}
         />
       )}
 

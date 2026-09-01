@@ -1,26 +1,38 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { hasPageAccess, ROLE_LABELS, ROLE_COLORS } from '../utils/permissions';
 
+// All nav items with their required read permission
 const navItems = [
-  { to: '/', label: 'داشبورد', icon: '📊', en: 'Dashboard' },
-  { to: '/ingredients', label: 'مواد اولیه', icon: '🥩', en: 'Ingredients' },
-  { to: '/recipes', label: 'دستور پخت', icon: '🍳', en: 'Recipes' },
-  { to: '/inventory', label: 'انبار و دریافت', icon: '📦', en: 'Inventory' },
-  { to: '/tables', label: 'میزها و سفارش', icon: '🍽️', en: 'Tables & Orders' },
-  { to: '/kds', label: 'صفحه آشپزخانه', icon: '👨‍🍳', en: 'KDS', accent: true },
-  { to: '/nutrition', label: 'تغذیه', icon: '🥗', en: 'Nutrition' },
-  { to: '/analytics', label: 'تحلیل‌ها', icon: '📈', en: 'Analytics' },
-  { to: '/suppliers', label: 'تأمین‌کنندگان', icon: '🏪', en: 'Suppliers' },
+  { to: '/',              label: 'داشبورد',       icon: '📊', en: 'Dashboard',     permission: [] },
+  { to: '/ingredients',   label: 'مواد اولیه',    icon: '🥩', en: 'Ingredients',   permission: ['ingredients:view'] },
+  { to: '/recipes',       label: 'دستور پخت',     icon: '🍳', en: 'Recipes',       permission: ['recipes:view'] },
+  { to: '/inventory',     label: 'انبار و دریافت', icon: '📦', en: 'Inventory',     permission: ['inventory:view'] },
+  { to: '/tables',        label: 'میزها و سفارش',  icon: '🍽️', en: 'Tables & Orders', permission: ['orders:view'] },
+  { to: '/kds',           label: 'صفحه آشپزخانه',  icon: '👨‍🍳', en: 'KDS',           permission: ['kds:view'], accent: true },
+  { to: '/nutrition',     label: 'تغذیه',          icon: '🥗', en: 'Nutrition',     permission: ['nutrition:view'] },
+  { to: '/analytics',     label: 'تحلیل‌ها',       icon: '📈', en: 'Analytics',     permission: ['analytics:view'] },
+  { to: '/suppliers',     label: 'تأمین‌کنندگان',  icon: '🏪', en: 'Suppliers',     permission: ['suppliers:view'] },
 ];
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
+  const userPermissions = user?.permissions || [];
 
   const handleLogout = () => {
+    toast.systemEvent('👋 خروج', `${user?.name} از سیستم خارج شد`);
     logout();
     navigate('/login');
   };
+
+  // Filter nav items by user permissions
+  const visibleNavItems = navItems.filter(item => hasPageAccess(userPermissions, item.to));
+
+  const roleLabel = ROLE_LABELS[user?.role] || { fa: user?.role, en: user?.role };
+  const roleColor = ROLE_COLORS[user?.role] || 'bg-gray-500 text-white';
 
   return (
     <div className="min-h-screen flex">
@@ -40,8 +52,8 @@ export default function Layout() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-4">
-          {navItems.map((item) => (
+        <nav className="flex-1 py-4 overflow-y-auto">
+          {visibleNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -65,15 +77,17 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* User */}
+        {/* User Section */}
         <div className="p-4 border-t border-green-700">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 bg-green-700 rounded-full flex items-center justify-center text-sm">
               {user?.name?.charAt(0) || '?'}
             </div>
-            <div className="text-sm">
-              <div className="font-medium">{user?.name}</div>
-              <div className="text-green-400 text-xs">{user?.role}</div>
+            <div className="text-sm min-w-0">
+              <div className="font-medium truncate">{user?.name}</div>
+              <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-0.5 ${roleColor}`}>
+                {roleLabel.fa}
+              </span>
             </div>
           </div>
           <button
