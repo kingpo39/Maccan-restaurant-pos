@@ -1,0 +1,247 @@
+// MACCAN RMS - Production Database Schema
+// ACID-compliant with PostgreSQL, falls back to SQLite for dev
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // Change to "postgresql" for production
+  url      = env("DATABASE_URL")
+}
+
+// ─── ORGANIZATION & MULTI-TENANCY ────────────────────────────
+model Organization {
+  id          String     @id @default(cuid())
+  name        String
+  legalName   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  locations   Location[]
+  users       User[]
+  suppliers   Supplier[]
+  ingredients Ingredient[]
+  recipes     Recipe[]
+  orders      Order[]
+}
+
+model Location {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  address        String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  users          User[]
+  suppliers      Supplier[]
+  ingredients    Ingredient[]
+  recipes        Recipe[]
+  orders         Order[]
+}
+
+// ─── AUTH & USERS ────────────────────────────────────────────
+model User {
+  id             String     @id @default(cuid())
+  email          String     @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  role           String     // OWNER | MANAGER | HEAD_CHEF | SERVER | INVENTORY
+  permissions    String     @default("[]") // JSON array of permission strings
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  locationId     String
+  location       Location   @relation(fields: [locationId], references: [id])
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  orders         Order[]
+}
+
+// ─── SUPPLIERS ───────────────────────────────────────────────
+model Supplier {
+  id               String           @id @default(cuid())
+  organizationId   String
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  locationId       String
+  location         Location         @relation(fields: [locationId], references: [id])
+  name             String
+  code             String?
+  contactPerson    String?
+  email            String?
+  phone            String?
+  paymentTerms     String?          // NET30, NET60, etc.
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  ingredients      Ingredient[]
+  inventoryLogs    InventoryLog[]
+}
+
+// ─── INGREDIENTS & INVENTORY (CRITICAL - ACID) ───────────────
+model Ingredient {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  locationId     String
+  location       Location        @relation(fields: [locationId], references: [id])
+  name           String
+  baseUnit       String          // kg, L, ea, g
+  category       String          // PROTEIN, PRODUCE, DAIRY, PANTRY, SPICE, BEVERAGE
+  costPerUnit    Float           @default(0) // Current moving weighted average cost
+  wasteFactor    Float           @default(0) // Percentage waste (e.g., 10 = 10%)
+  allergens      String          @default("[]") // JSON array
+  supplierId     String?
+  supplier       Supplier?       @relation(fields: [supplierId], references: [id])
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  recipeItems    RecipeItem[]
+  inventoryLogs  InventoryLog[]
+  stockBalance   StockBalance?
+  nutrition      Nutrition?
+
+  @@unique([organizationId, locationId, name])
+}
+
+// Stock Balance - Current quantity per ingredient per location
+// This is the SOURCE OF TRUTH for current stock
+model StockBalance {
+  id             String       @id @default(cuid())
+  organizationId String
+  locationId     String
+  ingredientId   String       @unique
+  ingredient     Ingredient   @relation(fields: [ingredientId], references: [id])
+  quantity       Float        @default(0) // Current quantity in baseUnit
+  reservedQty    Float        @default(0) // Reserved for pending orders
+  lastReceivedAt DateTime?
+  lastCostPerUnit Float?      // Last received unit cost for reference
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, locationId, ingredientId])
+}
+
+// Inventory Ledger - Every movement recorded (CRITICAL for audit)
+model InventoryLog {
+  id             String     @id @default(cuid())
+  organizationId String
+  locationId     String
+  ingredientId   String
+  ingredient     Ingredient @relation(fields: [ingredientId], references: [id])
+  supplierId     String?
+  supplier       Supplier?  @relation(fields: [supplierId], references: [id])
+
+  // Movement
+  quantityChange Float      // Positive = received, Negative = consumed/wasted
+  unitCost       Float      // Cost per unit at time of movement
+  totalValue     Float      // quantityChange * unitCost
+
+  // Reference
+  referenceType  String     // RECEIVING, ORDER, WASTE, ADJUSTMENT, TRANSFER
+  referenceId    String?    // Order ID, Receiving ID, etc.
+
+  // Metadata
+  batchNumber    String?
+  expiryDate     DateTime?
+  note           String?
+  actorId        String?    // Who performed this action
+
+  createdAt      DateTime   @default(now())
+}
+
+// ─── RECIPES & COSTING ───────────────────────────────────────
+model Recipe {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  locationId     String
+  location       Location      @relation(fields: [locationId], references: [id])
+  name           String
+  description    String?
+  category       String        @default("main") // starter, main, dessert, beverage
+  menuPrice      Float         @default(0) // Selling price
+  yieldQuantity  Float         @default(1) // How many portions this recipe makes
+  wasteFactor    Float         @default(1.0) // e.g., 1.1 = 10% waste added to cost
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  items          RecipeItem[]
+  orderItems     OrderItem[]
+}
+
+model RecipeItem {
+  id           String    @id @default(cuid())
+  recipeId     String
+  recipe       Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  quantity     Float     // Quantity needed per batch (in ingredient's baseUnit)
+
+  @@unique([recipeId, ingredientId])
+}
+
+// ─── ORDERS & POS ────────────────────────────────────────────
+model Table {
+  id             String    @id @default(cuid())
+  label          String    // T1, T2, VIP-1, etc.
+  capacity       Int       @default(4)
+  zone           String    @default("INDOOR") // INDOOR, GARDEN, VIP, BAR
+  status         String    @default("FREE") // FREE, OCCUPIED, RESERVED
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  orders         Order[]
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  tableId        String?
+  table          Table?      @relation(fields: [tableId], references: [id])
+  serverId       String?
+  server         User?       @relation(fields: [serverId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  locationId     String
+  location       Location    @relation(fields: [locationId], references: [id])
+
+  status         String      @default("OPEN") // OPEN, CONFIRMED, PREPARING, READY, SERVED, CLOSED, CANCELLED
+  totalAmount    Float       @default(0)
+  taxAmount      Float       @default(0)
+  discountAmount Float       @default(0)
+  notes          String?
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  closedAt       DateTime?
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id           String    @id @default(cuid())
+  orderId      String
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  recipeId     String
+  recipe       Recipe    @relation(fields: [recipeId], references: [id])
+  quantity     Int       @default(1)
+  unitPrice    Float     // Price at time of order (snapshotted)
+  notes        String?
+  status       String    @default("PENDING") // PENDING, PREPARING, READY, DELIVERED
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ─── NUTRITION ───────────────────────────────────────────────
+model Nutrition {
+  id           String    @id @default(cuid())
+  ingredientId String    @unique
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  calories     Float     @default(0) // per 100g
+  protein      Float     @default(0)
+  fat          Float     @default(0)
+  carbs        Float     @default(0)
+  fiber        Float     @default(0)
+  sodium       Float     @default(0)
+  updatedAt    DateTime  @updatedAt
+}
