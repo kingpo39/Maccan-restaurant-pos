@@ -1,22 +1,295 @@
 @import "tailwindcss";
 
-/* MACCAN RMS Custom Styles */
-:root {
-  --green-900: #1a3a2a;
-  --green-700: #2d5016;
-  --green-600: #3a6b20;
-  --green-500: #4a8a2a;
-  --gold: #c8a951;
-  --gold-light: #f0e0a0;
+/* ═══════════════════════════════════════════════════════════════
+   MACCAN RMS — CYBERPUNK COMMAND CENTER THEME
+   Dark Mode Only · Neon Noir · Glassmorphism
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme {
+  --font-mono: 'JetBrains Mono', 'Share Tech Mono', monospace;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'JetBrains Mono', monospace;
+
+  --color-cyber-black: #050505;
+  --color-cyber-panel: #0a0a0f;
+  --color-cyber-surface: #12121a;
+  --color-cyber-border: #1a1a2e;
+  --color-cyber-cyan: #00f3ff;
+  --color-cyber-magenta: #ff00ff;
+  --color-cyber-lime: #ccff00;
+  --color-cyber-red: #ff3333;
+  --color-cyber-amber: #ffaa00;
+  --color-cyber-green: #00ff88;
+  --color-cyber-blue: #3366ff;
+  --color-cyber-white: #e0e0e8;
+  --color-cyber-muted: #4a4a5a;
 }
 
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f0f2f5;
+/* ─── BASE RESET ─────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
   margin: 0;
+  padding: 0;
+  background: #050505;
+  color: #e0e0e8;
+  font-family: 'JetBrains Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
-::-webkit-scrollbar-thumb { background: #2d5016; border-radius: 4px; }
+/* ─── SCROLLBAR ──────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+::-webkit-scrollbar-thumb {
+  background: #00f3ff33;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00f3ff66;
+}
+
+/* ─── SCANLINE OVERLAY ───────────────────────────────────────── */
+.cyber-scanlines::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 243, 255, 0.015) 2px,
+    rgba(0, 243, 255, 0.015) 4px
+  );
+}
+
+/* ─── GRID BACKGROUND ────────────────────────────────────────── */
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ─── GLOW EFFECTS ───────────────────────────────────────────── */
+.glow-cyan {
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), 0 0 30px rgba(0, 243, 255, 0.1);
+}
+.glow-cyan-strong {
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.5), 0 0 40px rgba(0, 243, 255, 0.2), inset 0 0 15px rgba(0, 243, 255, 0.05);
+}
+.glow-magenta {
+  box-shadow: 0 0 10px rgba(255, 0, 255, 0.3), 0 0 30px rgba(255, 0, 255, 0.1);
+}
+.glow-green {
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3), 0 0 30px rgba(0, 255, 136, 0.1);
+}
+.glow-red {
+  box-shadow: 0 0 10px rgba(255, 51, 51, 0.3), 0 0 30px rgba(255, 51, 51, 0.1);
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 8px rgba(0, 243, 255, 0.6), 0 0 20px rgba(0, 243, 255, 0.3);
+}
+.text-glow-magenta {
+  text-shadow: 0 0 8px rgba(255, 0, 255, 0.6), 0 0 20px rgba(255, 0, 255, 0.3);
+}
+.text-glow-green {
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.6), 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+/* ─── GLASSMORPHISM PANELS ───────────────────────────────────── */
+.cyber-panel {
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 243, 255, 0.15);
+  border-radius: 4px;
+}
+.cyber-panel:hover {
+  border-color: rgba(0, 243, 255, 0.3);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.08);
+}
+
+/* ─── NEON BORDER ANIMATION ──────────────────────────────────── */
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(0, 243, 255, 0.3); }
+  50% { border-color: rgba(0, 243, 255, 0.6); }
+}
+.animate-border-glow {
+  animation: border-glow 3s ease-in-out infinite;
+}
+
+/* ─── BLINK CURSOR ───────────────────────────────────────────── */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-blink {
+  animation: blink-cursor 1s step-end infinite;
+}
+
+/* ─── PULSE GLOW ─────────────────────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ─── GLITCH EFFECT ──────────────────────────────────────────── */
+@keyframes glitch {
+  0%, 90%, 100% { transform: translate(0); }
+  92% { transform: translate(-2px, 1px); }
+  94% { transform: translate(2px, -1px); }
+  96% { transform: translate(-1px, -1px); }
+  98% { transform: translate(1px, 1px); }
+}
+.animate-glitch {
+  animation: glitch 3s ease-in-out infinite;
+}
+
+/* ─── TYPING EFFECT ──────────────────────────────────────────── */
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+/* ─── NEON BUTTON ────────────────────────────────────────────── */
+.cyber-btn {
+  position: relative;
+  padding: 8px 20px;
+  background: transparent;
+  border: 1px solid #00f3ff;
+  color: #00f3ff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.cyber-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 243, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.cyber-btn:hover::before {
+  opacity: 1;
+}
+.cyber-btn:hover {
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.4), inset 0 0 15px rgba(0, 243, 255, 0.1);
+}
+.cyber-btn-magenta {
+  border-color: #ff00ff;
+  color: #ff00ff;
+}
+.cyber-btn-magenta::before { background: rgba(255, 0, 255, 0.1); }
+.cyber-btn-magenta:hover {
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.4), inset 0 0 15px rgba(255, 0, 255, 0.1);
+}
+.cyber-btn-green {
+  border-color: #00ff88;
+  color: #00ff88;
+}
+.cyber-btn-green::before { background: rgba(0, 255, 136, 0.1); }
+.cyber-btn-green:hover {
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.4), inset 0 0 15px rgba(0, 255, 136, 0.1);
+}
+
+/* ─── CYBER INPUT ────────────────────────────────────────────── */
+.cyber-input {
+  background: rgba(10, 10, 15, 0.9);
+  border: 1px solid rgba(0, 243, 255, 0.2);
+  color: #e0e0e8;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 10px 14px;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.3s;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+.cyber-input:focus {
+  border-color: #00f3ff;
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+.cyber-input::placeholder {
+  color: #4a4a5a;
+}
+
+/* ─── STATUS INDICATORS ──────────────────────────────────────── */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-online {
+  background: #00ff88;
+  box-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
+}
+.status-warning {
+  background: #ffaa00;
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.6);
+}
+.status-error {
+  background: #ff3333;
+  box-shadow: 0 0 6px rgba(255, 51, 51, 0.6);
+}
+
+/* ─── DATA TABLE ─────────────────────────────────────────────── */
+.cyber-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.cyber-table th {
+  background: rgba(0, 243, 255, 0.08);
+  color: #00f3ff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 10px;
+  border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+}
+.cyber-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.cyber-table tr:hover td {
+  background: rgba(0, 243, 255, 0.03);
+}
+
+/* ─── PRINT STYLES ───────────────────────────────────────────── */
+@media print {
+  .cyber-scanlines::before,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+    color: black;
+  }
+}
