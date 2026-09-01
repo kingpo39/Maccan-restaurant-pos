@@ -1,18 +1,18 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { hasPageAccess, ROLE_LABELS } from '../utils/permissions';
+import { hasPageAccess, ROLE_LABELS, ROLE_COLORS } from '../utils/permissions';
 
 const navItems = [
-  { to: '/',              label: 'Dashboard',     icon: '⬡', permission: [] },
-  { to: '/ingredients',   label: 'Ingredients',   icon: '◈', permission: ['ingredients:view'] },
-  { to: '/recipes',       label: 'Recipes',       icon: '◇', permission: ['recipes:view'] },
-  { to: '/inventory',     label: 'Inventory',     icon: '▣', permission: ['inventory:view'] },
-  { to: '/tables',        label: 'Tables',        icon: '◉', permission: ['orders:view'] },
-  { to: '/kds',           label: 'KDS',           icon: '⚡', permission: ['kds:view'], accent: true },
-  { to: '/nutrition',     label: 'Nutrition',     icon: '△', permission: ['nutrition:view'] },
-  { to: '/analytics',     label: 'Analytics',     icon: '◧', permission: ['analytics:view'] },
-  { to: '/suppliers',     label: 'Suppliers',     icon: '⬢', permission: ['suppliers:view'] },
+  { to: '/',              label: 'Dashboard',     labelFa: 'داشبورد',       icon: '📊', permission: [] },
+  { to: '/ingredients',   label: 'Ingredients',   labelFa: 'مواد اولیه',    icon: '🥩', permission: ['ingredients:view'] },
+  { to: '/recipes',       label: 'Recipes',       labelFa: 'دستور پخت',     icon: '🍳', permission: ['recipes:view'] },
+  { to: '/inventory',     label: 'Inventory',     labelFa: 'انبار',         icon: '📦', permission: ['inventory:view'] },
+  { to: '/tables',        label: 'Tables',        labelFa: 'میزها',         icon: '🍽️', permission: ['orders:view'] },
+  { to: '/kds',           label: 'KDS',           labelFa: 'آشپزخانه',      icon: '👨‍🍳', permission: ['kds:view'] },
+  { to: '/nutrition',     label: 'Nutrition',     labelFa: 'تغذیه',         icon: '🥗', permission: ['nutrition:view'] },
+  { to: '/analytics',     label: 'Analytics',     labelFa: 'تحلیل‌ها',      icon: '📈', permission: ['analytics:view'] },
+  { to: '/suppliers',     label: 'Suppliers',     labelFa: 'تأمین‌کنندگان',  icon: '🏪', permission: ['suppliers:view'] },
 ];
 
 export default function Layout() {
@@ -22,83 +22,70 @@ export default function Layout() {
   const userPermissions = user?.permissions || [];
 
   const handleLogout = () => {
-    toast.systemEvent('SESSION.TERMINATED', `${user?.name} disconnected`);
+    toast.systemEvent('Signed out', `${user?.name} disconnected`);
     logout();
     navigate('/login');
   };
 
   const visibleNavItems = navItems.filter(item => hasPageAccess(userPermissions, item.to));
-
-  const roleColor = {
-    OWNER: '#00f3ff',
-    MANAGER: '#ff00ff',
-    HEAD_CHEF: '#ffaa00',
-    SERVER: '#00ff88',
-    INVENTORY: '#3366ff',
-  }[user?.role] || '#00f3ff';
+  const roleColor = ROLE_COLORS[user?.role] || 'bg-gray-500 text-white';
 
   return (
-    <div className="min-h-screen flex bg-[#050505] cyber-scanlines">
+    <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-16 hover:w-56 bg-[#08080d] border-r border-cyan-500/10 flex flex-col transition-all duration-300 group/sidebar overflow-hidden z-20">
+      <aside className="w-60 bg-card border-r border-border flex flex-col">
         {/* Brand */}
-        <div className="p-3 border-b border-cyan-500/10 flex items-center gap-3 min-h-[60px]">
-          <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center border border-cyan-500/30 glow-cyan text-cyan-400 text-sm font-bold"
-               style={{ fontFamily: 'Orbitron' }}>
-            M
-          </div>
-          <div className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-            <div className="text-xs font-bold text-white tracking-wider" style={{ fontFamily: 'Orbitron' }}>MACCAN</div>
-            <div className="text-[9px] text-cyan-500/50 font-mono">COMMAND CENTER</div>
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm">
+              M
+            </div>
+            <div>
+              <div className="font-semibold text-sm text-foreground">MACCAN RMS</div>
+              <div className="text-xs text-muted-foreground">Restaurant Management</div>
+            </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-3">
+        <nav className="flex-1 py-2 px-2">
           {visibleNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 mx-1 transition-all duration-200 group/nav ${
+                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors mb-0.5 ${
                   isActive
-                    ? 'bg-cyan-500/10 border-l-2 border-cyan-400 text-cyan-400 text-glow-cyan'
-                    : item.accent
-                      ? 'border-l-2 border-transparent text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/5 hover:border-amber-500/30'
-                      : 'border-l-2 border-transparent text-gray-500 hover:text-cyan-400 hover:bg-cyan-500/5 hover:border-cyan-500/20'
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 }`
               }
             >
-              <span className="text-lg w-8 text-center flex-shrink-0">{item.icon}</span>
-              <span className="text-[11px] font-mono tracking-wider opacity-0 group-hover/sidebar:opacity-100 transition-opacity whitespace-nowrap">
-                {item.label.toUpperCase()}
-              </span>
+              <span className="text-base">{item.icon}</span>
+              <span>{item.label}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* User */}
-        <div className="p-3 border-t border-cyan-500/10 min-h-[60px]">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 flex-shrink-0 flex items-center justify-center text-[10px] font-bold border"
-              style={{ borderColor: roleColor + '40', color: roleColor }}
-            >
+        <div className="p-3 border-t border-border">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground">
               {user?.name?.charAt(0) || '?'}
             </div>
-            <div className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity min-w-0">
-              <div className="text-[10px] text-white font-mono truncate">{user?.name}</div>
-              <div className="text-[9px] font-mono" style={{ color: roleColor }}>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-foreground truncate">{user?.name}</div>
+              <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full ${roleColor}`}>
                 {ROLE_LABELS[user?.role]?.en || user?.role}
-              </div>
+              </span>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full mt-2 text-left text-[10px] text-red-500/50 hover:text-red-400 font-mono tracking-wider opacity-0 group-hover/sidebar:opacity-100 transition-all px-1"
+            className="w-full text-left text-sm text-muted-foreground hover:text-destructive px-2 py-1.5 rounded hover:bg-accent transition-colors"
           >
-            &#x25B6; DISCONNECT
+            Sign out
           </button>
         </div>
       </aside>
@@ -106,24 +93,14 @@ export default function Layout() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Top Bar */}
-        <div className="sticky top-0 z-10 bg-[#050505]/90 backdrop-blur-md border-b border-cyan-500/10 px-6 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-4 text-[10px] font-mono text-gray-600">
-            <span className="flex items-center gap-1.5">
-              <span className="status-dot status-online" />
-              SYS.ONLINE
-            </span>
-            <span className="text-gray-800">|</span>
-            <span>NET: 127.0.0.1:3001</span>
-            <span className="text-gray-800">|</span>
-            <span className="text-cyan-500/40">MACCAN.RMS.v2</span>
+        <div className="sticky top-0 z-10 bg-card/80 backdrop-blur-sm border-b border-border px-6 py-2.5 flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            🌿🌊 Laleh Sar, Mazandaran
           </div>
-          <div className="flex items-center gap-4 text-[10px] font-mono">
-            <span className="text-gray-600">
-              {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}
-            </span>
-            <span className="text-cyan-500/60 font-bold tabular-nums">
-              {new Date().toLocaleTimeString('en-US', { hour12: false })}
-            </span>
+          <div className="text-xs text-muted-foreground font-mono">
+            {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}
+            {' · '}
+            {new Date().toLocaleTimeString('en-US', { hour12: false })}
           </div>
         </div>
 

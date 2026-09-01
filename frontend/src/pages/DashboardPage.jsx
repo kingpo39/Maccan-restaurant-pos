@@ -1,190 +1,121 @@
-import { useState, useEffect } from 'react';
-import { api } from '../utils/api';
-import CyberStatCard from '../components/CyberStatCard';
-import HoloChart from '../components/HoloChart';
-import OrderTerminal from '../components/OrderTerminal';
+import { StatCard } from '../components/dashboard/StatCard';
+import { RecentOrdersTable } from '../components/dashboard/RecentOrdersTable';
+import { LowStockAlerts } from '../components/dashboard/LowStockAlerts';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { useDashboardData } from '../hooks/useDashboardData';
 
 export default function DashboardPage() {
-  const [data, setData] = useState(null);
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { metrics, orders, lowStock, costAnalysis, isLoading } = useDashboardData();
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/analytics/overview').catch(() => null),
-      api.get('/orders?active=true').catch(() => []),
-    ]).then(([analytics, activeOrders]) => {
-      setData(analytics);
-      setOrders(activeOrders || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="text-center">
-          <div className="text-cyan-400 text-4xl mb-4 animate-pulse-glow">&#x25CC;</div>
-          <div className="text-[10px] font-mono text-cyan-500/60 tracking-[4px]">INITIALIZING COMMAND CENTER...</div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="card p-6">
+              <div className="skeleton h-4 w-24 mb-3" />
+              <div className="skeleton h-8 w-20" />
+            </div>
+          ))}
         </div>
+        <div className="skeleton h-64 w-full rounded-lg" />
       </div>
     );
   }
 
-  const summary = data?.summary || {};
-  const costAnalysis = data?.costAnalysis || [];
-  const topProfit = data?.costAnalysis
-    ?.filter(r => r.profit > 0)
-    ?.sort((a, b) => b.profit - a.profit)
-    ?.slice(0, 5) || [];
-
-  // Chart data from cost analysis
-  const chartData = costAnalysis
-    .filter(r => r.menuPrice > 0)
-    .sort((a, b) => a.foodCostPercent - b.foodCostPercent)
-    .map(r => ({
-      name: r.name?.length > 12 ? r.name.slice(0, 12) + '...' : r.name,
-      'Food Cost %': r.foodCostPercent,
-      Profit: r.profit,
-    }));
-
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-lg font-bold text-white tracking-wider" style={{ fontFamily: 'Orbitron' }}>
-            COMMAND <span className="text-cyan-400 text-glow-cyan">CENTER</span>
-          </h1>
-          <div className="text-[10px] font-mono text-gray-600 mt-1">
-            &#x1F33F;&#x1F30A; Laleh Sar, Mazandaran — Restaurant Operations Overview
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Executive Overview</h1>
+          <p className="text-muted-foreground">Real-time performance for MACCAN Group</p>
         </div>
-        <div className="text-[9px] font-mono text-gray-700 text-right">
-          <div>UPTIME: {Math.floor((Date.now() % 86400000) / 3600000)}h {Math.floor((Date.now() % 3600000) / 60000)}m</div>
-          <div className="text-cyan-500/40">NODE: LOCAL-3001</div>
-        </div>
+        <button className="btn btn-primary btn-sm no-print">
+          Export Report
+        </button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <CyberStatCard
+      {/* KPI Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
           title="Ingredients"
-          value={summary.ingredientCount || data?.counts?.ingredients || 0}
+          value={metrics.totalIngredients.toString()}
           subtitle="Active items"
-          icon="◈"
-          color="#00f3ff"
+          icon={<span className="text-lg">🥩</span>}
+          iconColor="blue"
+          change={3.1}
         />
-        <CyberStatCard
+        <StatCard
           title="Recipes"
-          value={summary.recipeCount || data?.counts?.recipes || 0}
+          value={metrics.totalRecipes.toString()}
           subtitle="Menu items"
-          icon="◇"
-          color="#ff00ff"
+          icon={<span className="text-lg">🍳</span>}
+          iconColor="purple"
         />
-        <CyberStatCard
+        <StatCard
           title="Active Orders"
-          value={orders.length}
-          subtitle="In service"
-          icon="◉"
-          color={orders.length > 0 ? '#ffaa00' : '#00ff88'}
+          value={metrics.activeOrders.toString()}
+          subtitle="Currently in service"
+          icon={<span className="text-lg">📋</span>}
+          iconColor={metrics.activeOrders > 0 ? 'amber' : 'green'}
         />
-        <CyberStatCard
-          title="Food Cost"
-          value={`${summary.avgFoodCostPercent || data?.avgFoodCostPercent || 0}%`}
+        <StatCard
+          title="Food Cost %"
+          value={`${metrics.foodCostPercentage}%`}
           subtitle="Average ratio"
-          icon="◧"
-          color={summary.avgFoodCostPercent < 30 ? '#00ff88' : '#ff3333'}
-          trend={summary.avgFoodCostPercent < 30 ? 5.2 : -3.1}
-          trendLabel="vs target"
+          icon={<span className="text-lg">📊</span>}
+          iconColor={metrics.foodCostPercentage < 35 ? 'green' : 'red'}
+          change={metrics.costChange}
         />
       </div>
 
-      {/* Charts & Terminal */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Holographic Chart */}
-        <HoloChart
-          data={chartData}
-          title="REVENUE.STREAM // FOOD COST ANALYSIS"
-          dataKey="Food Cost %"
-          color="#00f3ff"
-          height={250}
-        />
-
-        {/* Live Order Terminal */}
-        <OrderTerminal
-          orders={orders}
-          onStatusChange={async (orderId, status) => {
-            try {
-              await api.put(`/orders/${orderId}/status`, { status });
-              setOrders(prev => prev.filter(o => o.id !== orderId));
-            } catch (e) { console.error(e); }
-          }}
-        />
-      </div>
-
-      {/* Recipe Cost Table */}
-      {costAnalysis.length > 0 && (
-        <div className="cyber-panel overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2 bg-cyan-500/5 border-b border-cyan-500/10">
-            <span className="text-[10px] font-mono text-cyan-400 tracking-[2px]">
-              RECIPE.COST.DB // {costAnalysis.length} RECORDS
-            </span>
-            <span className="text-[9px] font-mono text-gray-600">SORTED BY FOOD COST %</span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="cyber-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Recipe</th>
-                  <th>Category</th>
-                  <th>Raw Cost</th>
-                  <th>Cost/Serving</th>
-                  <th>Menu Price</th>
-                  <th>Food Cost %</th>
-                  <th>Profit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {costAnalysis
-                  .sort((a, b) => a.foodCostPercent - b.foodCostPercent)
-                  .map((recipe, idx) => (
-                  <tr key={recipe.id}>
-                    <td className="text-gray-600">{String(idx + 1).padStart(2, '0')}</td>
-                    <td className="text-white font-medium">{recipe.name}</td>
-                    <td>
-                      <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase border border-white/10">
-                        {recipe.category}
-                      </span>
-                    </td>
-                    <td className="tabular-nums text-gray-400">{recipe.rawCost?.toLocaleString()} T</td>
-                    <td className="tabular-nums text-white font-bold">{recipe.costPerServing?.toLocaleString()} T</td>
-                    <td className="tabular-nums text-cyan-400">{recipe.menuPrice?.toLocaleString()} T</td>
-                    <td>
-                      <span
-                        className="font-bold tabular-nums"
-                        style={{
-                          color: recipe.foodCostPercent < 25 ? '#00ff88' :
-                                 recipe.foodCostPercent < 35 ? '#ffaa00' : '#ff3333'
-                        }}
-                      >
-                        {recipe.foodCostPercent}%
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`font-bold tabular-nums ${recipe.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {recipe.profit >= 0 ? '+' : ''}{recipe.profit?.toLocaleString()} T
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <RecentOrdersTable
+            orders={orders}
+            onStatusChange={async (orderId, status) => {
+              try {
+                const { api } = await import('../utils/api');
+                await api.put(`/orders/${orderId}/status`, { status });
+                window.location.reload();
+              } catch (e) { console.error(e); }
+            }}
+          />
         </div>
-      )}
+        <div className="lg:col-span-1 space-y-4">
+          <LowStockAlerts alerts={lowStock} />
+
+          {/* Top Dishes */}
+          {costAnalysis.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Performing Dishes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {costAnalysis
+                    .filter(r => r.profit > 0 || r.total_profit > 0)
+                    .sort((a, b) => (b.profit || b.total_profit || 0) - (a.profit || a.total_profit || 0))
+                    .slice(0, 5)
+                    .map((dish, idx) => (
+                    <div key={dish.id || idx} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-mono text-muted-foreground w-5">{idx + 1}.</span>
+                        <span className="text-sm font-medium">{dish.name}</span>
+                      </div>
+                      <span className={`text-sm font-mono ${dish.foodCostPercent < 30 ? 'text-green-600' : 'text-amber-600'}`}>
+                        {dish.foodCostPercent || dish.food_cost_percent}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

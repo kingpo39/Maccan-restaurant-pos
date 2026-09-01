@@ -15,7 +15,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(err.message || 'ACCESS DENIED');
+      setError(err.message || 'Invalid credentials');
     }
     setLoading(false);
   };
@@ -26,76 +26,55 @@ export default function LoginPage() {
   };
 
   const accounts = [
-    { role: 'OWNER', email: 'admin@maccan.com', pw: 'admin123', color: '#00f3ff' },
-    { role: 'MANAGER', email: 'sara@maccan.com', pw: 'staff123', color: '#ff00ff' },
-    { role: 'HEAD_CHEF', email: 'reza@maccan.com', pw: 'staff123', color: '#ffaa00' },
-    { role: 'SERVER', email: 'ali@maccan.com', pw: 'staff123', color: '#00ff88' },
+    { role: 'Owner', email: 'admin@maccan.com', pw: 'admin123', color: 'bg-blue-500' },
+    { role: 'Manager', email: 'sara@maccan.com', pw: 'staff123', color: 'bg-purple-500' },
+    { role: 'Head Chef', email: 'reza@maccan.com', pw: 'staff123', color: 'bg-amber-500' },
+    { role: 'Server', email: 'ali@maccan.com', pw: 'staff123', color: 'bg-green-500' },
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] cyber-grid cyber-scanlines flex items-center justify-center p-4">
-      {/* Ambient glow orbs */}
-      <div className="fixed top-1/4 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="fixed bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-500/5 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="w-full max-w-md">
-        {/* Terminal Header */}
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="w-full max-w-sm">
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-block border border-cyan-500/30 px-6 py-2 mb-4">
-            <span className="text-cyan-400 text-xs font-mono tracking-[4px] text-glow-cyan">
-              SYSTEM.INIT
-            </span>
+          <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center text-primary-foreground font-bold text-xl mx-auto mb-4">
+            M
           </div>
-          <h1 className="text-3xl font-bold text-white mb-1" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-            MACCAN<span className="text-cyan-400 text-glow-cyan"> RMS</span>
-          </h1>
-          <p className="text-cyan-500/60 text-xs font-mono tracking-widest">
-            RESTAURANT MANAGEMENT SYSTEM v2.0
-          </p>
-          <p className="text-gray-600 text-[10px] mt-2 font-mono">
-            &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;<br />
-            &#x2502; &#x1F33F;&#x1F30A; Laleh Sar, Mazandaran  &#x2502;<br />
-            &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
-          </p>
+          <h1 className="text-2xl font-bold text-foreground">MACCAN RMS</h1>
+          <p className="text-sm text-muted-foreground mt-1">Restaurant Management System</p>
+          <p className="text-xs text-muted-foreground mt-0.5">🌿🌊 Laleh Sar, Mazandaran</p>
         </div>
 
         {/* Login Form */}
-        <div className="cyber-panel p-6 animate-border-glow">
-          <div className="flex items-center gap-2 mb-6 pb-3 border-b border-cyan-500/10">
-            <span className="status-dot status-online animate-pulse-glow" />
-            <span className="text-cyan-400 text-xs font-mono tracking-widest">AUTH.SUBSYSTEM</span>
-          </div>
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Sign in</h2>
 
           {error && (
-            <div className="mb-4 px-3 py-2 bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
-              &#x26A0; {error}
+            <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+              {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label className="block text-cyan-500/70 text-[10px] font-mono tracking-widest mb-1.5 uppercase">
-                &#x25B8; IDENTIFIER
-              </label>
+              <label className="block text-sm font-medium text-foreground mb-1">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="cyber-input w-full"
+                className="input"
                 placeholder="user@maccan.com"
                 required
               />
             </div>
 
-            <div className="mb-6">
-              <label className="block text-cyan-500/70 text-[10px] font-mono tracking-widest mb-1.5 uppercase">
-                &#x25B8; PASSPHRASE
-              </label>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-1">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="cyber-input w-full"
+                className="input"
                 placeholder="••••••••"
                 required
               />
@@ -104,40 +83,31 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="cyber-btn w-full text-center disabled:opacity-30"
+              className="btn btn-primary w-full disabled:opacity-50"
             >
-              {loading ? '&#x25CC; AUTHENTICATING...' : '&#x25B6; INITIALIZE SESSION'}
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
         </div>
 
         {/* Quick Access */}
-        <div className="mt-4 cyber-panel p-4">
-          <div className="text-[10px] text-gray-600 font-mono tracking-widest mb-3 uppercase">
-            &#x25B8; Quick Access Profiles
-          </div>
+        <div className="mt-4 card p-4">
+          <p className="text-xs text-muted-foreground mb-3 font-medium">Demo accounts</p>
           <div className="grid grid-cols-2 gap-2">
             {accounts.map((a) => (
               <button
                 key={a.role}
                 onClick={() => quickLogin(a.email, a.pw)}
-                className="text-left px-3 py-2 bg-white/[0.02] border border-white/[0.06] hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-all group"
+                className="text-left px-3 py-2 rounded-md border border-border hover:bg-accent hover:border-primary/30 transition-all"
               >
-                <div className="text-[10px] font-mono font-bold" style={{ color: a.color }}>
-                  {a.role}
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${a.color}`} />
+                  <span className="text-sm font-medium text-foreground">{a.role}</span>
                 </div>
-                <div className="text-[9px] text-gray-600 font-mono group-hover:text-gray-400 transition-colors">
-                  {a.email}
-                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">{a.email}</div>
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-6 text-[9px] text-gray-700 font-mono">
-          MACCAN GROUP &#x2022; Laleh Sar, Mazandaran<br />
-          <span className="text-cyan-500/30">Powered by Cyberpunk Command Center v2.0</span>
         </div>
       </div>
     </div>
