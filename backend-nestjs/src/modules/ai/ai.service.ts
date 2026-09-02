@@ -117,52 +117,60 @@ export class AiService {
   }
 
   private parseOrder(transcript: string): { table: string | null; tableId: string | null; items: { name: string; quantity: number }[] } {
-    const lower = transcript.toLowerCase();
     let table: string | null = null;
     let tableId: string | null = null;
-    const tableMatch = lower.match(/(?:table|میز|میز\s*شماره)\s*(\d+)/);
+    const tableMatch = transcript.match(/(?:table|میز\s*شماره|میز|شماره\s*میز)\s*(\d+)/i);
     if (tableMatch) { table = tableMatch[1]; tableId = tableMatch[1]; }
 
     const persianNums: Record<string, number> = { 'یک': 1, 'دو': 2, 'سه': 3, 'چهار': 4, 'پنج': 5, 'شش': 6, 'هفت': 7, 'هشت': 8, 'نه': 9, 'ده': 10 };
     const wordNums: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
     const items: { name: string; quantity: number }[] = [];
 
-    // English: "2 kebab" or "two kebab"
-    const enPattern = /(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+([\w\s]+?)(?=,|and|then|$)/gi;
-    let match;
-    while ((match = enPattern.exec(transcript)) !== null) {
-      let qty = parseInt(match[1]);
-      if (isNaN(qty)) qty = wordNums[match[1].toLowerCase()] || 1;
-      const name = match[2].trim();
-      if (name && !['table', 'order', 'confirm', 'cancel'].includes(name.toLowerCase()))
-        items.push({ name, quantity: qty });
-    }
+    // Remove the table phrase and action words so they are not parsed as dishes
+    let rest = transcript
+      .replace(/table\s*\d+/gi, ' ')
+      .replace(/میز\s*شماره\s*\d+/g, ' ')
+      .replace(/میز\s*\d+/g, ' ')
+      .replace(/سفارش/gi, ' ')
+      .replace(/order/gi, ' ')
+      .replace(/لطفا/gi, ' ')
+      .trim();
 
-    // Persian: "دو کباب برگ"
-    const faPattern = /(یک|دو|سه|چهار|پنج|شش|هفت|هشت|نه|ده|\d+)\s+([\u0600-\u06FF\s]+?)(?=،|و|$)/g;
-    while ((match = faPattern.exec(transcript)) !== null) {
-      const qty = persianNums[match[1]] || parseInt(match[1]) || 1;
-      const name = match[2].trim();
-      if (name && !items.some(i => i.name === name))
+    // Split on quantity tokens: "یک کباب برگ و دو جوجه" -> qty token + name chunks
+    const qtyRe = /(یک|دو|سه|چهار|پنج|شش|هفت|هشت|نه|ده|one|two|three|four|five|six|seven|eight|nine|ten|\d+)/gi;
+    const parts = rest.split(qtyRe);
+    // parts[0] = text before first token, then alternating: token, name, token, name...
+    for (let i = 1; i < parts.length; i += 2) {
+      const token = (parts[i] || '').trim().toLowerCase();
+      if (!token) continue;
+      let qty = persianNums[token] ?? wordNums[token] ?? parseInt(token) ?? 1;
+      const name = (parts[i + 1] || '')
+        .replace(/[،,وand\s]+$/i, ' ')
+        .replace(/^[\s،,وand]+/i, ' ')
+        .trim();
+      if (!name) continue;
+      if (!items.some(it => it.name.toLowerCase() === name.toLowerCase()))
         items.push({ name, quantity: qty });
-    }
-
-    if (!items.length) {
-      const words = transcript.replace(/order|table|میز|شماره|confirm|cancel/gi, '').trim();
-      if (words) items.push({ name: words, quantity: 1 });
     }
 
     return { table, tableId, items };
   }
 
   private async findRecipe(name: string) {
-    const lower = name.toLowerCase();
-    let r = await this.prisma.recipe.findFirst({ where: { name: { contains: lower } } });
-    if (!r) r = await this.prisma.recipe.findFirst({ where: { nameFa: { contains: name } } });
+    const lower = name.toLowerCase().trim();
+
+    // Exact-ish match on English OR Persian name
+    let r = await this.prisma.recipe.findFirst({
+      where: { OR: [{ name: { contains: lower } }, { nameFa: { contains: name.trim() } }] },
+    });
+
+    // Keyword fallback over both fields (supports partial words like "kebab" / "کباب")
     if (!r) {
-      const keywords = lower.split(/\s+/);
+      const keywords = lower.split(/\s+/).filter(k => k.length >= 2);
       for (const k of keywords) {
-        r = await this.prisma.recipe.findFirst({ where: { name: { contains: k } } });
+        r = await this.prisma.recipe.findFirst({
+          where: { OR: [{ name: { contains: k } }, { nameFa: { contains: k } }] },
+        });
         if (r) break;
       }
     }
