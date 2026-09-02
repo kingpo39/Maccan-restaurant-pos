@@ -11,6 +11,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { IngredientsModule } from './modules/ingredients/ingredients.module';
 import { NutritionModule } from './modules/nutrition/nutrition.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SuppliersModule } from './modules/suppliers/suppliers.module';
     IngredientsModule,
     NutritionModule,
     SuppliersModule,
+    AiModule,
   ],
 })
 export class AppModule {}

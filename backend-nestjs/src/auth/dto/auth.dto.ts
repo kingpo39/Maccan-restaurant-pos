@@ -4,9 +4,9 @@ export class LoginDto {
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(6)
-  password: string;
+  password?: string;
 }
 
 export class RegisterDto {

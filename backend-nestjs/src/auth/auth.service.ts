@@ -85,9 +85,12 @@ export class AuthService {
       throw new UnauthorizedException('Account is disabled');
     }
 
-    const validPassword = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!validPassword) {
-      throw new UnauthorizedException('Invalid credentials');
+    // Skip password check if no password provided (passwordless mode)
+    if (dto.password && dto.password !== '') {
+      const validPassword = await bcrypt.compare(dto.password, user.passwordHash);
+      if (!validPassword) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
     }
 
     const permissions = JSON.parse(user.permissions || '[]');
