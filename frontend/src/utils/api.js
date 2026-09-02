@@ -5,6 +5,14 @@ function getToken() {
   return localStorage.getItem('maccan_token');
 }
 
+function errorMessage(data, status) {
+  if (typeof data === 'string') return data;
+  const message = data?.error || data?.message || data?.errors?.[0]?.message;
+  if (Array.isArray(message)) return message.join(', ');
+  if (message && typeof message === 'object') return message.message || JSON.stringify(message);
+  return `Request failed (${status})`;
+}
+
 async function apiCall(endpoint, options = {}) {
   const token = getToken();
   const headers = {
@@ -13,10 +21,12 @@ async function apiCall(endpoint, options = {}) {
     ...options.headers,
   };
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+  } catch {
+    throw new Error('Backend is unavailable. Start the POS server on port 3001.');
+  }
 
   if (res.status === 401) {
     localStorage.removeItem('maccan_token');
@@ -25,10 +35,9 @@ async function apiCall(endpoint, options = {}) {
     throw new Error('Unauthorized');
   }
 
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || data.message || 'Request failed');
-  }
+  const contentType = res.headers.get('content-type') || '';
+  const data = contentType.includes('application/json') ? await res.json() : await res.text();
+  if (!res.ok) throw new Error(errorMessage(data, res.status));
   return data;
 }
 

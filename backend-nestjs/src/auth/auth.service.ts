@@ -40,6 +40,12 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     'analytics:view',
     'suppliers:view',
   ],
+  GUEST: [
+    'dashboard:view',
+    'recipes:view',
+    'orders:view',
+    'menu:view',
+  ],
   SERVER: [
     'dashboard:view',
     'ingredients:view',

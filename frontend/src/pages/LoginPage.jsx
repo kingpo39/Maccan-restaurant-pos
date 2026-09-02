@@ -19,6 +19,7 @@ export default function LoginPage() {
     ['مدیر | Manager', 'sara@maccan.com', 'staff123', 'bg-[#6b4c9a]'],
     ['سرآشپز | Head Chef', 'reza@maccan.com', 'staff123', 'bg-[#c88a22]'],
     ['گارسون | Server', 'ali@maccan.com', 'staff123', 'bg-[#287f72]'],
+    ['مهمان | Guest', 'guest@maccan.com', 'guest123', 'bg-[#64748b]'],
   ];
 
   return (

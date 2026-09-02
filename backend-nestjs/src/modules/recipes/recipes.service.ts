@@ -65,7 +65,7 @@ export class RecipesService {
       where,
       include: {
         items: {
-          include: { ingredient: { select: { id: true, name: true, baseUnit: true, costPerUnit: true } } },
+          include: { ingredient: { select: { id: true, name: true, nameFa: true, baseUnit: true, costPerUnit: true } } },
         },
       },
       orderBy: { name: 'asc' },
@@ -85,7 +85,7 @@ export class RecipesService {
       where: { id },
       include: {
         items: {
-          include: { ingredient: { select: { id: true, name: true, baseUnit: true, costPerUnit: true } } },
+          include: { ingredient: { select: { id: true, name: true, nameFa: true, baseUnit: true, costPerUnit: true } } },
         },
       },
     });
@@ -136,7 +136,7 @@ export class RecipesService {
         where: { id: recipe.id },
         include: {
           items: {
-            include: { ingredient: { select: { id: true, name: true, baseUnit: true, costPerUnit: true } } },
+            include: { ingredient: { select: { id: true, name: true, nameFa: true, baseUnit: true, costPerUnit: true } } },
           },
         },
       });
@@ -167,7 +167,7 @@ export class RecipesService {
       },
       include: {
         items: {
-          include: { ingredient: { select: { id: true, name: true, baseUnit: true, costPerUnit: true } } },
+          include: { ingredient: { select: { id: true, name: true, nameFa: true, baseUnit: true, costPerUnit: true } } },
         },
       },
     });

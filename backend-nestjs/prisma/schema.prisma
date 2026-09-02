@@ -88,6 +88,7 @@ model Ingredient {
   locationId     String
   location       Location        @relation(fields: [locationId], references: [id])
   name           String
+  nameFa         String?          // Persian/Farsi name
   baseUnit       String          // kg, L, ea, g
   category       String          // PROTEIN, PRODUCE, DAIRY, PANTRY, SPICE, BEVERAGE
   costPerUnit    Float           @default(0) // Current moving weighted average cost
@@ -159,6 +160,7 @@ model Recipe {
   locationId     String
   location       Location      @relation(fields: [locationId], references: [id])
   name           String
+  nameFa         String?        // Persian/Farsi name
   description    String?
   category       String        @default("main") // starter, main, dessert, beverage
   menuPrice      Float         @default(0) // Selling price

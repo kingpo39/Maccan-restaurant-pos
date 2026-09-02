@@ -14,6 +14,7 @@ import TablesPage from './pages/TablesPage';
 import KDSPage from './pages/KDSPage';
 import NutritionPage from './pages/NutritionPage';
 import MenuPrintPage from './pages/MenuPrintPage';
+import VoiceAgent from './components/VoiceAgent';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -70,6 +71,7 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <BrowserRouter>
+          <VoiceAgent />
           <Routes>
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/menu-print" element={<MenuPrintPage />} />
