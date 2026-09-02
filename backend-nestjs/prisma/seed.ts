@@ -306,24 +306,49 @@ function getAllergens(name: string): string[] {
 async function main() {
   console.log('🌱 Seeding MACCAN RMS — bilingual menu from PDF...\n');
 
-  const org = await prisma.organization.upsert({ where: { id: 'org-maccan' }, update: {}, create: { id: 'org-maccan', name: 'MACCAN Group', legalName: 'MACCAN Hospitality Ltd.' } });
-  const loc = await prisma.location.upsert({ where: { id: 'loc-lalimsar' }, update: {}, create: { id: 'loc-lalimsar', organizationId: org.id, name: 'لالیم سر، مازندران', address: 'لالیم سر، مازندران، ایران' } });
+  // Use the EXISTING organization/location (first found) so seeded data is visible
+  // to users already in the database; fall back to a fixed org if none exists.
+  let org = await prisma.organization.findFirst();
+  if (!org) org = await prisma.organization.create({ data: { id: 'org-maccan', name: 'MACCAN Group', legalName: 'MACCAN Hospitality Ltd.' } });
+  let loc = await prisma.location.findFirst({ where: { organizationId: org.id } });
+  if (!loc) loc = await prisma.location.create({ data: { id: 'loc-lalimsar', organizationId: org.id, name: 'لالیم سر، مازندران', address: 'لالیم سر، مازندران، ایران' } });
+  console.log(`📍 Org: ${org.name} (${org.id}) | Loc: ${loc.name}`);
 
   // Users
   const salt = await bcrypt.genSalt(10);
   const ownerHash = await bcrypt.hash('Maccan@6', salt);
   const staffHash = await bcrypt.hash('staff123', salt);
   const ownerPerms = JSON.stringify(['dashboard:view','dashboard:edit','ingredients:view','ingredients:create','ingredients:edit','ingredients:delete','recipes:view','recipes:create','recipes:edit','recipes:delete','recipes:pricing','inventory:view','inventory:receive','inventory:adjust','inventory:delete','orders:view','orders:create','orders:cancel','orders:refund','kds:view','kds:manage','nutrition:view','nutrition:edit','nutrition:delete','analytics:view','analytics:export','suppliers:view','suppliers:manage','users:manage','settings:manage']);
-  const users = [
-    { id: 'user-bijan', email: 'bijan@maccan.com', passwordHash: ownerHash, firstName: 'Bijan', lastName: 'Owner', role: 'OWNER', permissions: ownerPerms },
-    { id: 'user-server', email: 'ali@maccan.com', passwordHash: staffHash, firstName: 'Ali', lastName: 'Server', role: 'SERVER', permissions: JSON.stringify(['dashboard:view','ingredients:view','recipes:view','orders:view','orders:create','kds:view','nutrition:view','suppliers:view']) },
-    { id: 'user-guest', email: 'guest@maccan.com', passwordHash: staffHash, firstName: 'Guest', lastName: 'User', role: 'GUEST', permissions: JSON.stringify(['dashboard:view','recipes:view','orders:view','menu:view']) },
+  const demoAccounts = [
+    { email: 'dara@maccan.com', passwordHash: ownerHash, firstName: 'Dara', lastName: 'Owner', role: 'OWNER', permissions: ownerPerms },
+    { email: 'bijan@maccan.com', passwordHash: ownerHash, firstName: 'Bijan', lastName: 'Owner', role: 'OWNER', permissions: ownerPerms },
+    { email: 'ali@maccan.com', passwordHash: staffHash, firstName: 'Ali', lastName: 'Server', role: 'SERVER', permissions: JSON.stringify(['dashboard:view','ingredients:view','recipes:view','orders:view','orders:create','kds:view','nutrition:view','suppliers:view']) },
+    { email: 'guest@maccan.com', passwordHash: staffHash, firstName: 'Guest', lastName: 'User', role: 'GUEST', permissions: JSON.stringify(['dashboard:view','recipes:view','orders:view','menu:view']) },
   ];
-  for (const u of users) await prisma.user.upsert({ where: { id: u.id }, update: { ...u }, create: { ...u, organizationId: org.id, locationId: loc.id } });
-  console.log('✅ Users seeded');
+  for (const u of demoAccounts) {
+    const existing = await prisma.user.findUnique({ where: { email: u.email } });
+    if (existing) {
+      await prisma.user.update({ where: { id: existing.id }, data: { firstName: u.firstName, lastName: u.lastName, role: u.role, permissions: u.permissions, organizationId: org.id, locationId: loc.id, isActive: true } });
+    } else {
+      await prisma.user.create({ data: { ...u, organizationId: org.id, locationId: loc.id } });
+    }
+  }
+  console.log('✅ Users seeded (idempotent by email)');
+
+  // Remove ad-hoc/non-canonical recipes (created during testing) so the app
+  // shows exactly one canonical menu set. Only affects recipes not id-prefixed menu-.
+  const orphanRecipes = await prisma.recipe.findMany({ where: { NOT: { id: { startsWith: 'menu-' } } }, select: { id: true } });
+  if (orphanRecipes.length) {
+    await prisma.order.deleteMany({ where: { items: { some: { recipeId: { in: orphanRecipes.map(r => r.id) } } } } });
+    await prisma.recipeItem.deleteMany({ where: { recipeId: { in: orphanRecipes.map(r => r.id) } } });
+    await prisma.recipe.deleteMany({ where: { id: { in: orphanRecipes.map(r => r.id) } } });
+    console.log(`🧹 Removed ${orphanRecipes.length} legacy recipes`);
+  }
 
   // Ingredients
   const ingredientMap = new Map<string, string>();
+  // Opening stock by category (base units: kg / L / ea)
+  const openingStock: Record<string, number> = { PROTEIN: 15, PRODUCE: 20, DAIRY: 12, PANTRY: 25, SPICE: 8, BAKERY: 15, BEVERAGE: 60, NUTS: 10 };
   for (const [en, fa, unit, category, cost] of ingredients) {
     const allergens = getAllergens(en);
     const row = await prisma.ingredient.upsert({
@@ -332,6 +357,13 @@ async function main() {
       create: { name: en, nameFa: fa, baseUnit: unit, category, costPerUnit: cost, allergens: JSON.stringify(allergens), organizationId: org.id, locationId: loc.id },
     });
     ingredientMap.set(en, row.id);
+    // Ensure an opening stock balance exists (keeps existing quantities untouched)
+    const hasStock = await prisma.stockBalance.findUnique({ where: { ingredientId: row.id } });
+    if (!hasStock) {
+      await prisma.stockBalance.create({
+        data: { organizationId: org.id, locationId: loc.id, ingredientId: row.id, quantity: openingStock[category] ?? 15, lastCostPerUnit: cost },
+      });
+    }
   }
   console.log(`✅ ${ingredients.length} bilingual ingredients seeded`);
 
