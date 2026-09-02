@@ -66,7 +66,7 @@ export default function IngredientsPage() {
       unit: item.unit,
       cost_per_unit: item.cost_per_unit,
       supplier_id: item.supplier_id || '',
-      allergens: item.allergens ? JSON.parse(item.allergens).join(', ') : '',
+      allergens: parseAllergens(item.allergens).join(', '),
     });
     setShowForm(true);
   };
@@ -79,6 +79,18 @@ export default function IngredientsPage() {
   );
 
   const getSupplierName = (id) => suppliers.find(s => s.id === id)?.name || '—';
+
+  // allergens can arrive as a parsed array, a JSON string, or a raw comma string
+  const parseAllergens = (allergens) => {
+    if (!allergens) return [];
+    if (Array.isArray(allergens)) return allergens;
+    try {
+      const parsed = JSON.parse(allergens);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return allergens.split(',').map(s => s.trim()).filter(Boolean);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -214,8 +226,8 @@ export default function IngredientsPage() {
                   </td>
                   <td className="px-4 py-3 text-gray-600">{getSupplierName(item.supplier_id)}</td>
                   <td className="px-4 py-3">
-                    {item.allergens && JSON.parse(item.allergens).length > 0
-                      ? JSON.parse(item.allergens).map(a => (
+                    {parseAllergens(item.allergens).length > 0
+                      ? parseAllergens(item.allergens).map(a => (
                           <span key={a} className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs ml-1">{a}</span>
                         ))
                       : <span className="text-gray-300">—</span>

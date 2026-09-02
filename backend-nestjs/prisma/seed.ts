@@ -3,260 +3,76 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+const ingredients = [
+  ['Eggplant', 'kg', 'PRODUCE', 180], ['Tomato', 'kg', 'PRODUCE', 120], ['Garlic', 'kg', 'PRODUCE', 260], ['Egg', 'ea', 'DAIRY', 35], ['Quail Egg', 'ea', 'DAIRY', 25],
+  ['Kashk', 'kg', 'DAIRY', 300], ['Onion', 'kg', 'PRODUCE', 80], ['Dried Mint', 'kg', 'SPICE', 450], ['Chicken Wings', 'kg', 'PROTEIN', 420], ['Sriracha Sauce', 'L', 'PANTRY', 280], ['Soy Sauce', 'L', 'PANTRY', 180], ['Smoked Paprika', 'kg', 'SPICE', 900], ['Sesame Seeds', 'kg', 'SPICE', 500], ['Mushrooms', 'kg', 'PRODUCE', 380], ['Ketchup', 'L', 'PANTRY', 150], ['Mayonnaise', 'kg', 'PANTRY', 220],
+  ['Chicken Breast', 'kg', 'PROTEIN', 480], ['Beef', 'kg', 'PROTEIN', 950], ['Shrimp', 'kg', 'PROTEIN', 1200], ['Taco Shell', 'ea', 'PANTRY', 25], ['Lettuce', 'kg', 'PRODUCE', 180], ['Cucumber', 'kg', 'PRODUCE', 100], ['Walnut', 'kg', 'NUTS', 1100], ['Pomegranate Paste', 'kg', 'PANTRY', 500], ['Olives', 'kg', 'PANTRY', 650], ['Vinegar', 'L', 'PANTRY', 120], ['Yogurt', 'kg', 'DAIRY', 180], ['Spinach', 'kg', 'PRODUCE', 220], ['Raisin', 'kg', 'PANTRY', 350], ['Avocado', 'kg', 'PRODUCE', 700], ['Honey', 'kg', 'PANTRY', 500], ['Parmesan Cheese', 'kg', 'DAIRY', 900], ['Croutons', 'kg', 'PANTRY', 350], ['Radish', 'kg', 'PRODUCE', 130], ['Pita Bread', 'kg', 'BAKERY', 180], ['Sumac', 'kg', 'SPICE', 650], ['Quinoa', 'kg', 'PANTRY', 400], ['Mango', 'kg', 'PRODUCE', 450], ['Cilantro', 'kg', 'PRODUCE', 220], ['Balsamic Vinegar', 'L', 'PANTRY', 400], ['Corn', 'kg', 'PRODUCE', 180], ['Broccoli', 'kg', 'PRODUCE', 220], ['Red Cabbage', 'kg', 'PRODUCE', 140], ['Edamame', 'kg', 'PANTRY', 450], ['Lemon', 'kg', 'PRODUCE', 180], ['Lamb', 'kg', 'PROTEIN', 1100], ['Saffron', 'kg', 'SPICE', 180000], ['Rice', 'kg', 'PANTRY', 180], ['Barberries', 'kg', 'PANTRY', 700], ['Plum', 'kg', 'PRODUCE', 250], ['Pumpkin', 'kg', 'PRODUCE', 180], ['Bitter Orange', 'L', 'PRODUCE', 220], ['Potato', 'kg', 'PRODUCE', 100], ['Cheddar Cheese', 'kg', 'DAIRY', 700], ['Salmon', 'kg', 'PROTEIN', 2400], ['Miso', 'kg', 'PANTRY', 900], ['Sea Bass', 'kg', 'PROTEIN', 1600], ['Sturgeon', 'kg', 'PROTEIN', 2200], ['Trout', 'kg', 'PROTEIN', 1100], ['Butter', 'kg', 'DAIRY', 650], ['Penne Pasta', 'kg', 'PANTRY', 260], ['Fettuccine Pasta', 'kg', 'PANTRY', 300], ['Cream', 'L', 'DAIRY', 400], ['Beef Mince', 'kg', 'PROTEIN', 850], ['Burger Bun', 'ea', 'BAKERY', 35], ['Pickles', 'kg', 'PANTRY', 260], ['Pomegranate Juice', 'L', 'BEVERAGE', 300], ['Verjuice', 'L', 'BEVERAGE', 220], ['Mint', 'kg', 'PRODUCE', 250], ['Watermelon', 'kg', 'PRODUCE', 100], ['Ginger', 'kg', 'PRODUCE', 300], ['Lemon Verbena', 'kg', 'BEVERAGE', 700], ['Hibiscus', 'kg', 'BEVERAGE', 500], ['Green Tea', 'kg', 'BEVERAGE', 800], ['Tea', 'kg', 'BEVERAGE', 500], ['Masala Tea Spice', 'kg', 'BEVERAGE', 650], ['Coffee Beans', 'kg', 'BEVERAGE', 1800], ['Cocoa', 'kg', 'BEVERAGE', 800], ['Milk', 'L', 'DAIRY', 180], ['Strawberry', 'kg', 'PRODUCE', 450], ['Cream Cheese', 'kg', 'DAIRY', 800], ['Flour', 'kg', 'BAKERY', 120], ['Sugar', 'kg', 'PANTRY', 100], ['Chocolate', 'kg', 'BAKERY', 900], ['Gelatin', 'kg', 'PANTRY', 600], ['Peach', 'kg', 'PRODUCE', 350], ['Carrot', 'kg', 'PRODUCE', 100], ['Pistachio', 'kg', 'NUTS', 1800], ['Cinnamon', 'kg', 'SPICE', 500], ['Apple', 'kg', 'PRODUCE', 180], ['Ice Cream', 'L', 'DAIRY', 500],
+] as const;
+
+const recipes = [
+  ['Soup of the Day', 'starter', 250, [['Seasonal Vegetables', 0]]],
+  ['Mirza Ghasemi', 'starter', 400, [['Eggplant', .25], ['Tomato', .12], ['Garlic', .015], ['Egg', 1], ['Quail Egg', 1]]],
+  ['Kashk-e Bademjan', 'starter', 350, [['Eggplant', .25], ['Kashk', .05], ['Onion', .08], ['Garlic', .01], ['Dried Mint', .003]]],
+  ['Chicken Wings', 'starter', 900, [['Chicken Wings', .35], ['Sriracha Sauce', .02], ['Soy Sauce', .02], ['Smoked Paprika', .003], ['Sesame Seeds', .005]]],
+  ['Fried Mushrooms', 'starter', 600, [['Mushrooms', .25], ['Flour', .03], ['Ketchup', .02], ['Mayonnaise', .02], ['Garlic', .005]]],
+  ['Chicken Tacos', 'starter', 1300, [['Chicken Breast', .18], ['Taco Shell', 2], ['Lettuce', .03], ['Tomato', .03], ['Cucumber', .02], ['Mayonnaise', .02]]],
+  ['Beef Tacos', 'starter', 1650, [['Beef Mince', .18], ['Taco Shell', 2], ['Lettuce', .03], ['Tomato', .03], ['Cucumber', .02], ['Mayonnaise', .02]]],
+  ['Shrimp Tacos', 'starter', 1550, [['Shrimp', .18], ['Taco Shell', 2], ['Lettuce', .03], ['Tomato', .03], ['Cucumber', .02], ['Mayonnaise', .02]]],
+  ['Mediterranean Shrimp', 'starter', 1450, [['Shrimp', .18], ['Garlic', .01], ['Potato', .18], ['Butter', .02], ['Lemon', .03]]],
+  ['Baghali Ghatogh', 'starter', 450, [['Broad Beans', .18], ['Egg', 2], ['Dill', .01], ['Garlic', .01]]],
+  ['Naz Khatoon', 'starter', 250, [['Eggplant', .2], ['Walnut', .02], ['Pomegranate Juice', .03], ['Garlic', .005]]],
+  ['Zeytoon Parvardeh', 'starter', 300, [['Olives', .12], ['Walnut', .02], ['Pomegranate Paste', .02], ['Garlic', .005]]],
+  ['Plain Olives', 'starter', 200, [['Olives', .12]]], ['Pickled Garlic', 'starter', 200, [['Garlic', .08], ['Vinegar', .03]]],
+  ['Spinach Borani', 'starter', 250, [['Yogurt', .1], ['Spinach', .08], ['Garlic', .005]]], ['Eggplant Borani', 'starter', 250, [['Yogurt', .1], ['Eggplant', .12], ['Garlic', .005], ['Dried Mint', .002]]],
+  ['Dalal Yogurt', 'starter', 250, [['Yogurt', .15], ['Aromatic Herbs', .005]]], ['Cucumber Yogurt', 'starter', 300, [['Yogurt', .15], ['Cucumber', .06], ['Mint', .003], ['Walnut', .01], ['Raisin', .01]]], ['Plain Yogurt', 'starter', 150, [['Yogurt', .15]]],
+  ['Green Jungle Salad', 'salad', 500, [['Lettuce', .08], ['Seasonal Vegetables', .12], ['Lemon', .02]]], ['Jungle Shirazi Salad', 'salad', 400, [['Cucumber', .08], ['Tomato', .08], ['Onion', .03], ['Verjuice', .02], ['Aromatic Herbs', .003]]],
+  ['Chicken Avocado Salad', 'salad', 1300, [['Chicken Breast', .12], ['Avocado', .08], ['Lettuce', .06], ['Tomato', .04], ['Honey', .01], ['Mustard', .01]]], ['Caesar Salad', 'salad', 700, [['Chicken Breast', .1], ['Lettuce', .08], ['Parmesan Cheese', .025], ['Croutons', .025], ['Mayonnaise', .03]]],
+  ['Fattoush Salad', 'salad', 500, [['Lettuce', .06], ['Cucumber', .05], ['Tomato', .05], ['Radish', .03], ['Pita Bread', .03], ['Sumac', .002]]], ['Beef Salad', 'salad', 1480, [['Beef', .12], ['Lettuce', .06], ['Tomato', .04], ['Cucumber', .04], ['Balsamic Vinegar', .02]]], ['Quinoa & Avocado Salad', 'salad', 1100, [['Quinoa', .08], ['Avocado', .08], ['Mango', .06], ['Cilantro', .003], ['Balsamic Vinegar', .015]]], ['Shrimp Salad', 'salad', 1250, [['Shrimp', .12], ['Spinach', .05], ['Corn', .04], ['Broccoli', .04], ['Red Cabbage', .03], ['Edamame', .04], ['Lemon', .02]]],
+  ['Shishlik', 'main', 3500, [['Lamb', .35], ['Tomato', .05], ['Onion', .03], ['Lemon', .02]]], ['Vaziri Kebab', 'main', 1700, [['Beef Mince', .15], ['Chicken Breast', .15], ['Saffron', .0002], ['Onion', .03], ['Tomato', .05]]], ['Barg Kebab', 'main', 2650, [['Beef', .25], ['Onion', .03], ['Lemon', .02]]], ['Chenjeh Kebab', 'main', 2500, [['Beef', .25], ['Onion', .03], ['Lemon', .02]]], ['Torsh Fillet Kebab', 'main', 2850, [['Beef', .25], ['Walnut', .025], ['Pomegranate Paste', .025], ['Aromatic Herbs', .003]]], ['Saffron Koobideh Kebab', 'main', 850, [['Beef Mince', .18], ['Saffron', .0002], ['Onion', .03]]], ['Saffron Chicken Kebab', 'main', 650, [['Chicken Breast', .2], ['Saffron', .0002], ['Lemon', .02]]], ['Torsh Chicken Kebab', 'main', 850, [['Chicken Breast', .2], ['Walnut', .02], ['Pomegranate Paste', .02], ['Aromatic Herbs', .003]]],
+  ['Classic Kebab Platter', 'main', 4600, [['Lamb', .15], ['Beef Mince', .08], ['Chicken Breast', .08], ['Saffron', .0002], ['Tomato', .08], ['Onion', .04]]], ['Premium Kebab Platter', 'main', 8500, [['Beef', .12], ['Lamb', .15], ['Beef Mince', .08], ['Chicken Breast', .08], ['Saffron', .0002], ['Walnut', .015], ['Tomato', .1]]], ['Seafood Kebab Platter', 'main', 6500, [['Carp', .15], ['Sturgeon', .12], ['Trout', .12], ['Shrimp', .1], ['Tomato', .08], ['Lemon', .02]]],
+  ['Vegetable Platter', 'side', 800, [['Seasonal Vegetables', .25]]], ['Saffron Rice', 'side', 250, [['Rice', .15], ['Saffron', .0001]]], ['Saffron Kateh', 'side', 250, [['Rice', .15], ['Saffron', .0001]]], ['Sabzi Polo', 'side', 300, [['Rice', .15], ['Aromatic Herbs', .01]]], ['Baked Potato', 'side', 450, [['Potato', .25]]], ['French Fries', 'side', 450, [['Potato', .25], ['Parmesan Cheese', .01]]], ['Mashed Potatoes', 'side', 500, [['Potato', .25], ['Butter', .02], ['Cream', .03], ['Cheddar Cheese', .02]]],
+  ['Salmon Steak', 'main', 6500, [['Salmon', .25], ['Miso', .025], ['Potato', .18], ['Butter', .02]]], ['Sea Bass Steak', 'main', 3500, [['Sea Bass', .25], ['Spinach', .08], ['Lemon', .03], ['Butter', .025], ['Potato', .18]]], ['Sturgeon Steak with Walnut Sauce', 'main', 2000, [['Sturgeon', .25], ['Walnut', .03], ['Potato', .18]]], ['Sturgeon Steak with Wild Raspberry Sauce', 'main', 1850, [['Sturgeon', .25], ['Raspberry', .05], ['Potato', .18]]], ['Grilled Sturgeon Kebab', 'main', 1700, [['Sturgeon', .22], ['Tomato', .06], ['Potato', .15]]], ['Herbed Rice with Trout', 'main', 1600, [['Trout', .25], ['Rice', .15], ['Aromatic Herbs', .01]]], ['Grilled Trout', 'main', 1300, [['Trout', .25], ['Tomato', .06], ['Lemon', .02]]], ['Grilled Shrimp Skewers', 'main', 2100, [['Shrimp', .25], ['Tomato', .06], ['Lemon', .02]]],
+  ['Baghali Polo with Lamb Shank', 'main', 2400, [['Lamb', .25], ['Rice', .15], ['Broad Beans', .06], ['Dill', .01]]], ['Baghali Polo with Lamb', 'main', 2200, [['Lamb', .2], ['Rice', .15], ['Aromatic Herbs', .01]]], ['Zereshk Polo with Chicken', 'main', 750, [['Chicken Breast', .2], ['Rice', .15], ['Barberries', .025], ['Saffron', .0001]]], ['Slow-Cooked Lamb Shank', 'main', 2100, [['Lamb', .3], ['Onion', .05], ['Tomato', .05]]], ['Akbar Joojeh with Saffron Rice', 'main', 1050, [['Chicken Breast', .25], ['Butter', .025], ['Pomegranate Sauce', .04], ['Rice', .15], ['Saffron', .0001]]],
+  ['Fesenjan Stew with Persian Rice', 'local', 2500, [['Walnut', .06], ['Pomegranate Paste', .04], ['Chicken Breast', .2], ['Rice', .15]]], ['Duck with Nardoon', 'local', 2300, [['Duck', .25], ['Pomegranate Paste', .04], ['Rice', .15]]], ['Anardoon Chicken with Persian Rice', 'local', 850, [['Chicken Breast', .2], ['Pomegranate Paste', .04], ['Rice', .15]]], ['Aloo Morgh with Persian Rice', 'local', 850, [['Chicken Breast', .2], ['Plum', .1], ['Rice', .15]]], ['Kahi Pela with Anardoon & Chicken', 'local', 1200, [['Chicken Breast', .2], ['Pomegranate Paste', .04], ['Pumpkin', .1], ['Egg', 1], ['Rice', .15]]], ['Laveh Kebab with Saffron Kateh', 'local', 2350, [['Lamb', .2], ['Bitter Orange', .03], ['Pomegranate Paste', .03], ['Rice', .15], ['Saffron', .0001]]], ['Pan-Fried Kebab with Saffron Kateh', 'local', 1300, [['Lamb', .1], ['Beef Mince', .1], ['Sumac', .003], ['Rice', .15], ['Saffron', .0001]]],
+  ['Chicken Strips', 'quick', 850, [['Chicken Breast', .2], ['Flour', .05], ['Egg', 1], ['Potato', .2], ['Ketchup', .02], ['Mayonnaise', .02]]], ['Chicken Alfredo Pasta', 'quick', 800, [['Penne Pasta', .12], ['Chicken Breast', .12], ['Mushrooms', .08], ['Cream', .06], ['Parmesan Cheese', .025]]], ['Shrimp Pasta', 'quick', 1200, [['Fettuccine Pasta', .12], ['Shrimp', .12], ['Broccoli', .06], ['Cream', .06], ['Parmesan Cheese', .025]]], ['Hamburger', 'quick', 850, [['Beef Mince', .18], ['Burger Bun', 1], ['Lettuce', .03], ['Tomato', .03], ['Pickles', .02], ['Mayonnaise', .02]]], ['Cheeseburger', 'quick', 950, [['Beef Mince', .18], ['Burger Bun', 1], ['Cheddar Cheese', .025], ['Lettuce', .03], ['Tomato', .03], ['Pickles', .02], ['Mayonnaise', .02]]],
+  ['Coca-Cola', 'beverage', 120, []], ['Fanta', 'beverage', 120, []], ['Sprite', 'beverage', 120, []], ['Yogurt Drink', 'beverage', 120, [['Yogurt', .25]]], ['Lemonade', 'beverage', 120, [['Lemon', .05], ['Sugar', .02]]], ['Mixed Smoothie', 'beverage', 100, [['Seasonal Fruits', .2]]], ['Saffron Drink', 'beverage', 120, [['Saffron', .0001], ['Sugar', .02]]], ['Watermelon & Mint Drink', 'beverage', 450, [['Watermelon', .25], ['Mint', .005]]], ['Verjuice Dalal Drink', 'beverage', 350, [['Verjuice', .08], ['Aromatic Herbs', .003]]], ['Cucumber Sekanjabin Drink', 'beverage', 350, [['Cucumber', .1], ['Vinegar', .02], ['Mint', .003]]], ['Mojito', 'beverage', 350, [['Lemon', .05], ['Mint', .005], ['Sugar', .02]]],
+  ['Brewed Tea', 'beverage', 150, [['Tea', .004]]], ['Pot-Brewed Tea', 'beverage', 400, [['Tea', .01]]], ['Hibiscus Tea', 'beverage', 250, [['Hibiscus', .004]]], ['Green Tea', 'beverage', 190, [['Green Tea', .004]]], ['Masala Tea', 'beverage', 225, [['Masala Tea Spice', .004], ['Milk', .08]]], ['Jungle Breeze Herbal Tea', 'beverage', 350, [['Lemon Verbena', .004]]], ['Vitality Herbal Tea', 'beverage', 400, [['Ginger', .004]]], ['Relaxation Herbal Tea', 'beverage', 350, [['Borage', .004]]], ['Forest Freshness Herbal Tea', 'beverage', 350, [['Mint', .004]]], ['Smile Herbal Tea', 'beverage', 380, [['Apple', .04], ['Cinnamon', .002]]],
+  ['Single Espresso', 'beverage', 180, [['Coffee Beans', .009]]], ['Double Espresso', 'beverage', 240, [['Coffee Beans', .018]]], ['Espresso Macchiato', 'beverage', 240, [['Coffee Beans', .009], ['Milk', .03]]], ['Cappuccino', 'beverage', 350, [['Coffee Beans', .009], ['Milk', .15]]], ['Caffe Latte', 'beverage', 350, [['Coffee Beans', .009], ['Milk', .2]]], ['Latte Macchiato', 'beverage', 370, [['Coffee Beans', .009], ['Milk', .2]]], ['Americano', 'beverage', 280, [['Coffee Beans', .009]]], ['Hot Chocolate', 'beverage', 320, [['Cocoa', .02], ['Milk', .2], ['Sugar', .01]]], ['Hot Milk', 'beverage', 180, [['Milk', .2]]], ['Milk Shot', 'beverage', 80, [['Milk', .05]]],
+  ['Strawberry Cheesecake', 'dessert', 550, [['Cream Cheese', .1], ['Strawberry', .05], ['Flour', .03], ['Sugar', .03]]], ['Caramel Cheesecake', 'dessert', 500, [['Cream Cheese', .1], ['Sugar', .04], ['Milk', .03]]], ['Saffron Cake', 'dessert', 550, [['Flour', .06], ['Egg', 1], ['Sugar', .03], ['Saffron', .0001]]], ['Daily Cake', 'dessert', 270, [['Flour', .06], ['Egg', 1], ['Sugar', .03]]], ['Plain Croissant', 'dessert', 320, [['Flour', .08], ['Butter', .03]]], ['Chocolate Croissant', 'dessert', 370, [['Flour', .08], ['Butter', .03], ['Chocolate', .02]]], ['Chocolate Cookie', 'dessert', 320, [['Flour', .04], ['Butter', .02], ['Chocolate', .015], ['Sugar', .02]]], ['Classic Tiramisu', 'dessert', 450, [['Cream Cheese', .08], ['Coffee Beans', .004], ['Egg', 1], ['Sugar', .02]]], ['Pistachio Tiramisu', 'dessert', 550, [['Cream Cheese', .08], ['Pistachio', .02], ['Coffee Beans', .004], ['Egg', 1], ['Sugar', .02]]], ['Scoop Ice Cream', 'dessert', 250, [['Ice Cream', .12]]], ['Peach Dessert', 'dessert', 450, [['Peach', .12], ['Ice Cream', .08]]], ['Carrot Halva', 'dessert', 350, [['Carrot', .12], ['Sugar', .04], ['Walnut', .02]]], ['Siyah Halva', 'dessert', 350, [['Flour', .06], ['Sugar', .04], ['Butter', .03]]],
+] as const;
+
+const extraIngredients: Record<string, readonly [string, string, string, number]> = {
+  'Seasonal Vegetables': ['Seasonal Vegetables', 'kg', 'PRODUCE', 180], 'Broad Beans': ['Broad Beans', 'kg', 'PRODUCE', 300], Dill: ['Dill', 'kg', 'PRODUCE', 300], 'Aromatic Herbs': ['Aromatic Herbs', 'kg', 'SPICE', 450], Mustard: ['Mustard', 'kg', 'PANTRY', 300], Carp: ['Carp', 'kg', 'PROTEIN', 700], Raspberry: ['Raspberry', 'kg', 'PRODUCE', 650], 'Pomegranate Sauce': ['Pomegranate Sauce', 'L', 'PANTRY', 400], Duck: ['Duck', 'kg', 'PROTEIN', 1200], Borage: ['Borage', 'kg', 'BEVERAGE', 700], 'Seasonal Fruits': ['Seasonal Fruits', 'kg', 'PRODUCE', 300],
+};
+
 async function main() {
-  console.log('🌱 Seeding MACCAN RMS database...\n');
-
-  // 1. Create Organization
-  const org = await prisma.organization.upsert({
-    where: { id: 'org-maccan' },
-    update: {},
-    create: {
-      id: 'org-maccan',
-      name: 'MACCAN Group',
-      legalName: 'MACCAN Hospitality Ltd.',
-    },
-  });
-  console.log('✅ Organization created');
-
-  // 2. Create Location
-  const loc = await prisma.location.upsert({
-    where: { id: 'loc-lalimsar' },
-    update: {},
-    create: {
-      id: 'loc-lalimsar',
-      organizationId: org.id,
-      name: 'لالیم سر، مازندران',
-      address: 'لالیم سر، مازندران، ایران',
-    },
-  });
-  console.log('✅ Location created');
-
-  // 3. Create Users
+  console.log('🌱 Seeding MACCAN RMS from the supplied menu...');
+  const org = await prisma.organization.upsert({ where: { id: 'org-maccan' }, update: {}, create: { id: 'org-maccan', name: 'MACCAN Group', legalName: 'MACCAN Hospitality Ltd.' } });
+  const loc = await prisma.location.upsert({ where: { id: 'loc-lalimsar' }, update: {}, create: { id: 'loc-lalimsar', organizationId: org.id, name: 'لالیم سر، مازندران', address: 'لالیم سر، مازندران، ایران' } });
   const salt = await bcrypt.genSalt(10);
-  const adminHash = await bcrypt.hash('admin123', salt);
+  const ownerHash = await bcrypt.hash('Maccan@6', salt);
   const staffHash = await bcrypt.hash('staff123', salt);
+  const ownerPermissions = JSON.stringify(['dashboard:view','dashboard:edit','ingredients:view','ingredients:create','ingredients:edit','ingredients:delete','recipes:view','recipes:create','recipes:edit','recipes:delete','recipes:pricing','inventory:view','inventory:receive','inventory:adjust','inventory:delete','orders:view','orders:create','orders:cancel','orders:refund','kds:view','kds:manage','nutrition:view','nutrition:edit','nutrition:delete','analytics:view','analytics:export','suppliers:view','suppliers:manage','users:manage','settings:manage']);
+  const users = [{ id: 'user-bijan', email: 'bijan@maccan.com', passwordHash: ownerHash, firstName: 'Bijan', lastName: 'Owner', role: 'OWNER', permissions: ownerPermissions }, { id: 'user-server', email: 'ali@maccan.com', passwordHash: staffHash, firstName: 'Ali', lastName: 'Server', role: 'SERVER', permissions: JSON.stringify(['dashboard:view','ingredients:view','recipes:view','orders:view','orders:create','kds:view','nutrition:view','suppliers:view']) }];
+  for (const user of users) await prisma.user.upsert({ where: { id: user.id }, update: { ...user }, create: { ...user, organizationId: org.id, locationId: loc.id } });
 
-  const users = [
-    {
-      id: 'user-admin',
-      email: 'admin@maccan.com',
-      passwordHash: adminHash,
-      firstName: 'Admin',
-      lastName: 'Owner',
-      role: 'OWNER',
-      permissions: JSON.stringify([
-        'dashboard:view', 'dashboard:edit',
-        'ingredients:view', 'ingredients:create', 'ingredients:edit', 'ingredients:delete',
-        'recipes:view', 'recipes:create', 'recipes:edit', 'recipes:delete', 'recipes:pricing',
-        'inventory:view', 'inventory:receive', 'inventory:adjust', 'inventory:delete',
-        'orders:view', 'orders:create', 'orders:cancel', 'orders:refund',
-        'kds:view', 'kds:manage',
-        'nutrition:view', 'nutrition:edit',
-        'analytics:view', 'analytics:export',
-        'suppliers:view', 'suppliers:create', 'suppliers:edit', 'suppliers:delete',
-        'users:manage', 'settings:manage',
-      ]),
-    },
-    {
-      id: 'user-server',
-      email: 'ali@maccan.com',
-      passwordHash: staffHash,
-      firstName: 'Ali',
-      lastName: 'Server',
-      role: 'SERVER',
-      permissions: JSON.stringify([
-        'dashboard:view', 'ingredients:view', 'recipes:view',
-        'orders:view', 'orders:create', 'kds:view', 'nutrition:view', 'suppliers:view',
-      ]),
-    },
-  ];
-
-  for (const u of users) {
-    await prisma.user.upsert({
-      where: { id: u.id },
-      update: {},
-      create: { ...u, organizationId: org.id, locationId: loc.id },
-    });
+  const ingredientMap = new Map<string, string>();
+  for (const item of [...ingredients, ...Object.values(extraIngredients)]) {
+    const [name, baseUnit, category, costPerUnit] = item;
+    const allergenNames = ['Egg', 'Quail Egg', 'Kashk', 'Yogurt', 'Parmesan Cheese', 'Cheddar Cheese', 'Cream', 'Milk', 'Butter', 'Cream Cheese', 'Flour', 'Pistachio', 'Walnut', 'Mayonnaise'].includes(name) ? ['DAIRY'] : ['Walnut', 'Pistachio'].includes(name) ? ['NUTS'] : [];
+    const row = await prisma.ingredient.upsert({ where: { organizationId_locationId_name: { organizationId: org.id, locationId: loc.id, name } }, update: { baseUnit, category, costPerUnit, allergens: JSON.stringify(allergenNames), isActive: true }, create: { name, baseUnit, category, costPerUnit, allergens: JSON.stringify(allergenNames), organizationId: org.id, locationId: loc.id } });
+    ingredientMap.set(name, row.id);
   }
-  console.log('✅ Users created');
 
-  // 4. Create Supplier
-  const supplier = await prisma.supplier.upsert({
-    where: { id: 'sup-freshfarm' },
-    update: {},
-    create: {
-      id: 'sup-freshfarm',
-      organizationId: org.id,
-      locationId: loc.id,
-      name: 'Fresh Farm Co.',
-      code: 'FF-001',
-      contactPerson: 'Ahmad',
-      paymentTerms: 'NET30',
-    },
-  });
-  console.log('✅ Supplier created');
-
-  // 5. Create Ingredients
-  const ingredients = [
-    { id: 'ing-chicken', name: 'Chicken Breast', baseUnit: 'kg', costPerUnit: 180000, category: 'PROTEIN' },
-    { id: 'ing-lamb', name: 'Lamb Meat', baseUnit: 'kg', costPerUnit: 450000, category: 'PROTEIN' },
-    { id: 'ing-rice', name: 'Basmati Rice', baseUnit: 'kg', costPerUnit: 85000, category: 'GRAIN' },
-    { id: 'ing-tomato', name: 'Fresh Tomatoes', baseUnit: 'kg', costPerUnit: 35000, category: 'PRODUCE' },
-    { id: 'ing-onion', name: 'Onions', baseUnit: 'kg', costPerUnit: 25000, category: 'PRODUCE' },
-    { id: 'ing-saffron', name: 'Saffron', baseUnit: 'g', costPerUnit: 120000, category: 'SPICE' },
-    { id: 'ing-oil', name: 'Cooking Oil', baseUnit: 'L', costPerUnit: 95000, category: 'PANTRY' },
-    { id: 'ing-butter', name: 'Butter', baseUnit: 'kg', costPerUnit: 320000, category: 'DAIRY' },
-    { id: 'ing-flour', name: 'All-Purpose Flour', baseUnit: 'kg', costPerUnit: 28000, category: 'GRAIN' },
-    { id: 'ing-egg', name: 'Eggs', baseUnit: 'ea', costPerUnit: 12000, category: 'DAIRY' },
-  ];
-
-  for (const ing of ingredients) {
-    await prisma.ingredient.upsert({
-      where: { id: ing.id },
-      update: {},
-      create: {
-        ...ing,
-        organizationId: org.id,
-        locationId: loc.id,
-        supplierId: supplier.id,
-      },
-    });
-  }
-  console.log('✅ Ingredients created');
-
-  // 6. Create Stock Balances
-  const stocks = [
-    { ingredientId: 'ing-chicken', quantity: 25 },
-    { ingredientId: 'ing-lamb', quantity: 15 },
-    { ingredientId: 'ing-rice', quantity: 50 },
-    { ingredientId: 'ing-tomato', quantity: 20 },
-    { ingredientId: 'ing-onion', quantity: 30 },
-    { ingredientId: 'ing-saffron', quantity: 500 },
-    { ingredientId: 'ing-oil', quantity: 20 },
-    { ingredientId: 'ing-butter', quantity: 10 },
-    { ingredientId: 'ing-flour', quantity: 40 },
-    { ingredientId: 'ing-egg', quantity: 200 },
-  ];
-
-  for (const s of stocks) {
-    await prisma.stockBalance.upsert({
-      where: {
-        organizationId_locationId_ingredientId: {
-          organizationId: org.id,
-          locationId: loc.id,
-          ingredientId: s.ingredientId,
-        },
-      },
-      update: {},
-      create: {
-        organizationId: org.id,
-        locationId: loc.id,
-        ingredientId: s.ingredientId,
-        quantity: s.quantity,
-      },
-    });
-  }
-  console.log('✅ Stock balances created');
-
-  // 7. Create Recipes
-  const recipes = [
-    {
-      id: 'recipe-chicken-kabab',
-      name: 'Chicken Kabab',
-      category: 'main',
-      menuPrice: 520000,
-      yieldQuantity: 1,
-      wasteFactor: 1.1,
-      items: [
-        { ingredientId: 'ing-chicken', quantity: 0.35 },
-        { ingredientId: 'ing-rice', quantity: 0.2 },
-        { ingredientId: 'ing-saffron', quantity: 2 },
-        { ingredientId: 'ing-onion', quantity: 0.1 },
-      ],
-    },
-    {
-      id: 'recipe-lamb-kebab',
-      name: 'Lamb Kebab Koobideh',
-      category: 'main',
-      menuPrice: 580000,
-      yieldQuantity: 1,
-      wasteFactor: 1.05,
-      items: [
-        { ingredientId: 'ing-lamb', quantity: 0.3 },
-        { ingredientId: 'ing-rice', quantity: 0.2 },
-        { ingredientId: 'ing-onion', quantity: 0.1 },
-      ],
-    },
-    {
-      id: 'recipe-zereshk-polo',
-      name: 'Zereshk Polo ba Morgh',
-      category: 'main',
-      menuPrice: 620000,
-      yieldQuantity: 1,
-      wasteFactor: 1.08,
-      items: [
-        { ingredientId: 'ing-chicken', quantity: 0.3 },
-        { ingredientId: 'ing-rice', quantity: 0.25 },
-        { ingredientId: 'ing-saffron', quantity: 3 },
-        { ingredientId: 'ing-oil', quantity: 0.03 },
-      ],
-    },
-  ];
-
-  for (const r of recipes) {
-    const { items, ...recipeData } = r;
-    await prisma.recipe.upsert({
-      where: { id: r.id },
-      update: {},
-      create: {
-        ...recipeData,
-        organizationId: org.id,
-        locationId: loc.id,
-      },
-    });
-
-    for (const item of items) {
-      await prisma.recipeItem.upsert({
-        where: { recipeId_ingredientId: { recipeId: r.id, ingredientId: item.ingredientId } },
-        update: {},
-        create: {
-          recipeId: r.id,
-          ingredientId: item.ingredientId,
-          quantity: item.quantity,
-        },
-      });
+  for (const [name, category, menuPrice, itemList] of recipes) {
+    const recipe = await prisma.recipe.upsert({ where: { id: `menu-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` }, update: { name, category, menuPrice, isActive: true }, create: { id: `menu-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, name, category, menuPrice, organizationId: org.id, locationId: loc.id } });
+    for (const [ingredientName, quantity] of itemList) {
+      const ingredientId = ingredientMap.get(ingredientName);
+      if (!ingredientId) continue;
+      await prisma.recipeItem.upsert({ where: { recipeId_ingredientId: { recipeId: recipe.id, ingredientId } }, update: { quantity }, create: { recipeId: recipe.id, ingredientId, quantity } });
     }
   }
-  console.log('✅ Recipes created');
-
-  // 8. Create Tables
-  const tables = [
-    { id: 'table-t1', label: 'T1', capacity: 4, zone: 'INDOOR' },
-    { id: 'table-t2', label: 'T2', capacity: 4, zone: 'INDOOR' },
-    { id: 'table-t3', label: 'T3', capacity: 6, zone: 'INDOOR' },
-    { id: 'table-t4', label: 'T4', capacity: 2, zone: 'GARDEN' },
-    { id: 'table-t5', label: 'T5', capacity: 8, zone: 'GARDEN' },
-    { id: 'table-vip1', label: 'VIP-1', capacity: 10, zone: 'VIP' },
-  ];
-
-  for (const t of tables) {
-    await prisma.table.upsert({
-      where: { id: t.id },
-      update: {},
-      create: t,
-    });
-  }
-  console.log('✅ Tables created');
-
-  console.log('\n🎉 Seed complete!');
-  console.log('Login: admin@maccan.com / admin123');
+  console.log(`✅ Imported ${ingredients.length + Object.keys(extraIngredients).length} normalized ingredients and ${recipes.length} menu recipes.`);
+  console.log('Login: bijan@maccan.com / Maccan@6');
 }
-
-main()
-  .catch((e) => {
-    console.error('❌ Seed failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch((error) => { console.error('❌ Seed failed:', error); process.exit(1); }).finally(async () => { await prisma.$disconnect(); });

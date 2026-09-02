@@ -7,6 +7,10 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { IngredientsModule } from './modules/ingredients/ingredients.module';
+import { NutritionModule } from './modules/nutrition/nutrition.module';
+import { SuppliersModule } from './modules/suppliers/suppliers.module';
 
 @Module({
   imports: [
@@ -18,6 +22,10 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     RecipesModule,
     OrdersModule,
     AnalyticsModule,
+    DashboardModule,
+    IngredientsModule,
+    NutritionModule,
+    SuppliersModule,
   ],
 })
 export class AppModule {}
