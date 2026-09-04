@@ -64,6 +64,7 @@ export class SuppliersService {
     return this.prisma.supplier.create({
       data: {
         name: dto.name,
+        nameFa: dto.nameFa,
         code: dto.code,
         contactPerson: dto.contactPerson,
         email: dto.email,
@@ -81,6 +82,7 @@ export class SuppliersService {
       where: { id },
       data: {
         name: dto.name,
+        nameFa: dto.nameFa,
         code: dto.code,
         contactPerson: dto.contactPerson,
         email: dto.email,

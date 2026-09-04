@@ -68,6 +68,7 @@ model Supplier {
   locationId       String
   location         Location         @relation(fields: [locationId], references: [id])
   name             String
+  nameFa           String?          // Persian/Farsi name
   code             String?
   contactPerson    String?
   email            String?

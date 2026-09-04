@@ -30,7 +30,43 @@ export default function AnalyticsPage() {
 
   if (!data) return <div className="p-8 text-center text-red-500">خطا در بارگذاری</div>;
 
-  const { dishes, summary, top_profit, most_ordered, margin_distribution, categories } = data;
+  // The NestJS /analytics/overview returns counts/today/costAnalysis instead of
+  // the legacy Express shape (dishes/summary/margin_distribution/...). Normalize
+  // the real payload so every section below renders from actual data.
+  const rawDishes = Array.isArray(data.costAnalysis)
+    ? data.costAnalysis
+    : Array.isArray(data.dishes)
+    ? data.dishes
+    : [];
+  const dishes = rawDishes.map(d => {
+    const menu_price = d.menuPrice ?? d.menu_price ?? 0;
+    const cost_per_serving = d.costPerServing ?? d.cost_per_serving ?? 0;
+    const food_cost_percent = d.foodCostPercent ?? d.food_cost_percent ?? 0;
+    const profit_per_serving = d.profit ?? d.profit_per_serving ?? (menu_price - cost_per_serving);
+    return {
+      ...d,
+      name: d.name || '—',
+      category: d.category || 'other',
+      menu_price,
+      cost_per_serving,
+      food_cost_percent,
+      profit_per_serving,
+      // No order history yet, so order-based metrics are present but zero.
+      order_count: d.order_count ?? 0,
+      total_revenue: d.total_revenue ?? 0,
+      total_actual_cost: d.total_actual_cost ?? 0,
+      total_profit: d.total_profit ?? profit_per_serving,
+    };
+  });
+
+  const summary = {
+    total_revenue: data.today?.revenue ?? 0,
+    total_profit: 0,
+    avg_food_cost_percent: data.avgFoodCostPercent ?? 0,
+    total_orders: data.today?.orderCount ?? 0,
+  };
+  const top_profit = [...dishes].sort((a, b) => b.total_profit - a.total_profit).slice(0, 5);
+  const most_ordered = [...dishes].filter(d => d.order_count > 0).sort((a, b) => b.order_count - a.order_count).slice(0, 5);
 
   // Prepare chart data
   const foodCostData = dishes
@@ -54,6 +90,14 @@ export default function AnalyticsPage() {
       هزینه: Math.round(d.total_actual_cost),
     }));
 
+  // Margin buckets derived from food-cost percent (no order history yet).
+  const bucket = (pred) => dishes.filter(pred).length;
+  const margin_distribution = {
+    high: bucket(d => d.food_cost_percent < 25),
+    medium: bucket(d => d.food_cost_percent >= 25 && d.food_cost_percent <= 35),
+    low: bucket(d => d.food_cost_percent > 35 && d.food_cost_percent <= 50),
+    loss: bucket(d => d.food_cost_percent > 50),
+  };
   const marginPieData = [
     { name: 'حاشیه بالا (<25%)', value: margin_distribution.high, color: '#2d5016' },
     { name: 'حاشیه متوسط (25-35%)', value: margin_distribution.medium, color: '#c8a951' },
@@ -61,11 +105,18 @@ export default function AnalyticsPage() {
     { name: 'زیان‌ده (>50%)', value: margin_distribution.loss, color: '#d45050' },
   ].filter(d => d.value > 0);
 
+  const catAgg = {};
+  for (const d of dishes) {
+    if (!catAgg[d.category]) catAgg[d.category] = { category: d.category, total_revenue: 0, total_profit: 0, total_orders: 0, count: 0 };
+    catAgg[d.category].count += 1;
+  }
+  const categories = Object.values(catAgg);
   const revenueByCategory = categories.map((c, i) => ({
     name: c.category,
     درآمد: Math.round(c.total_revenue),
     سود: Math.round(c.total_profit),
     سفارشات: c.total_orders,
+    count: c.count,
     color: COLORS[i % COLORS.length],
   }));
 
@@ -78,8 +129,8 @@ export default function AnalyticsPage() {
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <KPICard label="درآمد کل" value={`${(summary.total_revenue / 1000000).toFixed(1)}M`} unit="تومان" color="text-green-700" icon="💰" />
-        <KPICard label="سود خالص" value={`${(summary.total_profit / 1000000).toFixed(1)}M`} unit="تومان" color="text-blue-700" icon="📈" />
+        <KPICard label="درآمد کل" value={`${Math.round(summary.total_revenue).toLocaleString('fa-IR')} ت`} unit="امروز | Today" color="text-green-700" icon="💰" />
+        <KPICard label="سود خالص" value={`${Math.round(summary.total_profit).toLocaleString('fa-IR')} ت`} unit="امروز | Today" color="text-blue-700" icon="📈" />
         <KPICard label="میانگین هزینه" value={`${summary.avg_food_cost_percent}%`} unit="food cost" color="text-yellow-700" icon="📊" />
         <KPICard label="تعداد سفارشات" value={summary.total_orders} unit="order" color="text-purple-700" icon="🛒" />
       </div>
@@ -111,7 +162,7 @@ export default function AnalyticsPage() {
               <BarChart data={profitData} margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={v => (v / 1000000).toFixed(1) + 'M'} tick={{ fontSize: 11 }} />
+                <YAxis tickFormatter={v => Math.round(v).toLocaleString('fa-IR')} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(v) => [v.toLocaleString('fa-IR') + ' ت', '']} />
                 <Legend />
                 <Bar dataKey="درآمد" fill="#4a8a2a" radius={[4, 4, 0, 0]} />
@@ -153,7 +204,7 @@ export default function AnalyticsPage() {
             <BarChart data={revenueByCategory} margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis tickFormatter={v => (v / 1000000).toFixed(1) + 'M'} tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={v => Math.round(v).toLocaleString('fa-IR')} tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => [v.toLocaleString('fa-IR') + ' ت', '']} />
               <Legend />
               <Bar dataKey="درآمد" fill="#2d5016" radius={[4, 4, 0, 0]} />

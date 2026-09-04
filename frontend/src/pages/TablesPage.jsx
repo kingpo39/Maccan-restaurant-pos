@@ -27,8 +27,11 @@ function TablesView() {
         api.get('/orders/tables'),
         api.get('/orders?active=true'),
       ]);
-      setTables(t);
-      setOrders(o);
+      // Backend returns status as FREE/OCCUPIED/RESERVED; the UI config below
+      // is keyed lowercase (free/occupied/reserved). Normalize once on load so
+      // status colors, icons, counts, and the click-to-order handler all work.
+      setTables((t || []).map(tb => ({ ...tb, status: String(tb.status || 'free').toLowerCase() })));
+      setOrders(o || []);
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -89,7 +92,7 @@ function TablesView() {
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {zoneTables.map(table => {
-                  const st = statusConfig[table.status];
+                  const st = statusConfig[table.status] || statusConfig.free;
                   const activeOrder = orders.find(o => o.table_id === table.id);
                   return (
                     <div

@@ -6,7 +6,7 @@ export default function SuppliersPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [form, setForm] = useState({ name: '', contact: '', payment_terms: '' });
+  const [form, setForm] = useState({ name: '', nameFa: '', contactPerson: '', payment_terms: '' });
   const [error, setError] = useState('');
 
   const load = async () => {
@@ -27,7 +27,7 @@ export default function SuppliersPage() {
         await api.post('/suppliers', form);
       }
       setShowForm(false); setEditItem(null);
-      setForm({ name: '', contact: '', payment_terms: '' });
+      setForm({ name: '', nameFa: '', contactPerson: '', payment_terms: '' });
       load();
     } catch (e) { setError(e.message); }
   };
@@ -44,7 +44,7 @@ export default function SuppliersPage() {
           <h1 className="text-2xl font-bold text-green-900">📦 تأمین‌کنندگان | Suppliers</h1>
           <p className="text-gray-500 text-sm mt-1">مدیریت تأمین‌کنندگان و شرایط پرداخت</p>
         </div>
-        <button onClick={() => { setForm({ name: '', contact: '', payment_terms: '' }); setEditItem(null); setShowForm(true); }} className="bg-green-900 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+        <button onClick={() => { setForm({ name: '', nameFa: '', contactPerson: '', payment_terms: '' }); setEditItem(null); setShowForm(true); }} className="bg-green-900 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
           + تأمین‌کننده جدید
         </button>
       </div>
@@ -55,8 +55,9 @@ export default function SuppliersPage() {
             <h3 className="text-lg font-bold mb-4">{editItem ? '✏️ ویرایش' : '➕ جدید'}</h3>
             {error && <div className="bg-red-50 text-red-700 px-4 py-2 rounded mb-4 text-sm">{error}</div>}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="نام" className="w-full px-4 py-2 border rounded-lg" required />
-              <input type="text" value={form.contact} onChange={e => setForm({...form, contact: e.target.value})} placeholder="شماره تماس" className="w-full px-4 py-2 border rounded-lg" />
+              <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="نام انگلیسی | English Name" className="w-full px-4 py-2 border rounded-lg" required />
+              <input type="text" value={form.nameFa} onChange={e => setForm({...form, nameFa: e.target.value})} placeholder="نام فارسی | Persian Name" className="w-full px-4 py-2 border rounded-lg" dir="rtl" />
+              <input type="text" value={form.contactPerson} onChange={e => setForm({...form, contactPerson: e.target.value})} placeholder="شماره تماس | Contact" className="w-full px-4 py-2 border rounded-lg" />
               <input type="text" value={form.payment_terms} onChange={e => setForm({...form, payment_terms: e.target.value})} placeholder="شرایط پرداخت" className="w-full px-4 py-2 border rounded-lg" />
               <div className="flex gap-3">
                 <button type="submit" className="flex-1 bg-green-900 hover:bg-green-800 text-white py-2 rounded-lg transition">ذخیره</button>
@@ -85,13 +86,13 @@ export default function SuppliersPage() {
               {suppliers.map((s, i) => (
                 <tr key={s.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3 text-gray-500">{i + 1}</td>
-                  <td className="px-4 py-3 font-medium">{s.name}</td>
-                  <td className="px-4 py-3">{s.contact || '—'}</td>
+                  <td className="px-4 py-3"><div className="font-medium">{s.name}</div>{s.nameFa ? <div className="text-xs text-gray-500" dir="rtl">{s.nameFa}</div> : null}</td>
+                  <td className="px-4 py-3">{s.contactPerson || s.contact_person || s.contact || '—'}</td>
                   <td className="px-4 py-3">
                     <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">{s.payment_terms || '—'}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button onClick={() => { setEditItem(s); setForm({ name: s.name, contact: s.contact, payment_terms: s.payment_terms }); setShowForm(true); }} className="text-blue-600 hover:text-blue-800 mx-1">✏️</button>
+                    <button onClick={() => { setEditItem(s); setForm({ name: s.name, nameFa: s.nameFa || '', contactPerson: s.contactPerson || s.contact_person || '', payment_terms: s.payment_terms || '' }); setShowForm(true); }} className="text-blue-600 hover:text-blue-800 mx-1">✏️</button>
                     <button onClick={() => handleDelete(s.id)} className="text-red-600 hover:text-red-800 mx-1">🗑️</button>
                   </td>
                 </tr>

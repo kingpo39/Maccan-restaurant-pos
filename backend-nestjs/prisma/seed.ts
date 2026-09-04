@@ -303,6 +303,21 @@ function getAllergens(name: string): string[] {
 
 // ─── SEED ───────────────────────────────────────────────────────
 
+// ─── SUPPLIERS: [code, english, persian, contact, email, phone, paymentTerms] ─
+
+const suppliers: [string, string, string, string, string, string, string][] = [
+  ['MFP-001', 'Mazandaran Fresh Produce', 'مازندران محصولات تازه', 'Reza Mohammadi', 'reza@mazandaranfresh.ir', '0911-321-4567', 'Net 15'],
+  ['CSS-002', 'Caspian Seafood Suppliers', 'تأمین‌کنندگان محصولات دریایی کاسپین', 'Ahmad Hosseini', 'ahmad@caspianseafood.ir', '0912-654-7890', 'Net 30'],
+  ['IST-003', 'Iranian Spice Trading Co.', 'شرکت بازرگانی ادویه ایران', 'Farhad Karimi', 'farhad@iranianspice.ir', '0935-111-2233', 'Net 30'],
+  ['TMP-004', 'Tehran Meat Packers', 'بسته‌بندی گوشت تهران', 'Mohammad Bagheri', 'mohammad@tehranmeat.ir', '0912-444-5566', 'Net 7'],
+  ['SDP-005', 'Shomal Dairy Products', 'فرآورده‌های لبنی شمال', 'Sara Ahmadi', 'sara@shomaldairy.ir', '0911-777-8899', 'Net 15'],
+  ['CGF-006', 'Caucasus Grain & Flour Mill', 'آسیاب غلات و آرد قفقاز', 'Ali Rezaei', 'ali@caucasusgrain.ir', '0936-222-3344', 'Net 30'],
+  ['HOF-007', 'Hyrcanian Organic Farm', 'مزرعه ارگانیک هیرکانی', 'Maryam Jalili', 'maryam@hyrcanianorganic.ir', '0911-555-6677', 'Net 15'],
+  ['PBD-008', 'Persian Beverage Distributors', 'پخش نوشیدنی‌های ایرانی', 'Hassan Mohseni', 'hassan@persianbeverage.ir', '0912-888-9900', 'Net 30'],
+  ['API-009', 'Anzali Port Imports', 'واردات بندر انزلی', 'Mohsen Pourseifi', 'mohsen@anzaliportimport.ir', '0935-333-4455', 'Net 45'],
+  ['LFC-010', 'Local Farm Collective', 'اتحادیه مزارع محلی', 'Zahra Norouzi', 'zahra@localfarmcollective.ir', '0911-123-4567', 'Net 7'],
+];
+
 async function main() {
   console.log('🌱 Seeding MACCAN RMS — bilingual menu from PDF...\n');
 
@@ -334,6 +349,19 @@ async function main() {
     }
   }
   console.log('✅ Users seeded (idempotent by email)');
+
+  // Suppliers (bilingual, idempotent by code)
+  let supplierCount = 0;
+  for (const [code, en, fa, contact, email, phone, terms] of suppliers) {
+    const existing = await prisma.supplier.findFirst({ where: { code, organizationId: org.id } });
+    if (existing) {
+      await prisma.supplier.update({ where: { id: existing.id }, data: { name: en, nameFa: fa, contactPerson: contact, email, phone, paymentTerms: terms, isActive: true } });
+    } else {
+      await prisma.supplier.create({ data: { code, name: en, nameFa: fa, contactPerson: contact, email, phone, paymentTerms: terms, organizationId: org.id, locationId: loc.id } });
+    }
+    supplierCount++;
+  }
+  console.log(`✅ ${supplierCount} bilingual suppliers seeded`);
 
   // Remove ad-hoc/non-canonical recipes (created during testing) so the app
   // shows exactly one canonical menu set. Only affects recipes not id-prefixed menu-.

@@ -6,6 +6,10 @@ export class CreateSupplierDto {
 
   @IsOptional()
   @IsString()
+  nameFa?: string;
+
+  @IsOptional()
+  @IsString()
   code?: string;
 
   @IsOptional()
@@ -29,6 +33,10 @@ export class UpdateSupplierDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  nameFa?: string;
 
   @IsOptional()
   @IsString()
