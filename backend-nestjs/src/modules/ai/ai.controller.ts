@@ -14,13 +14,12 @@ export class AiController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('audio'))
   async handleVoice(@UploadedFile() file: any, @Body() body: any) {
-    if (!file && !body?.text) {
-      throw new BadRequestException('No audio or text provided');
-    }
+    // Accept text (from SpeechRecognition) or audio blob (fallback)
+    const transcript = body?.text || (file ? `[صوت ضبط شده - ${Math.round(file.size / 1024)}KB]` : null);
 
-    const transcript = file
-      ? await this.aiService.transcribeAudio(file)
-      : body.text;
+    if (!transcript) {
+      throw new BadRequestException('No text or audio provided');
+    }
 
     const context = {
       userId: body.userId,

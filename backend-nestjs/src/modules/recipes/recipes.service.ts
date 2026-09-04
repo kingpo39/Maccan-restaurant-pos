@@ -108,6 +108,7 @@ export class RecipesService {
       const recipe = await tx.recipe.create({
         data: {
           name: dto.name,
+          nameFa: dto.nameFa,
           description: dto.description,
           category: dto.category || 'main',
           menuPrice: dto.menuPrice || 0,
@@ -159,6 +160,7 @@ export class RecipesService {
       where: { id },
       data: {
         name: dto.name || undefined,
+        nameFa: dto.nameFa !== undefined ? dto.nameFa : undefined,
         description: dto.description !== undefined ? dto.description : undefined,
         category: dto.category || undefined,
         menuPrice: dto.menuPrice !== undefined ? dto.menuPrice : undefined,

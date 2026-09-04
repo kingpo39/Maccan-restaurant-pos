@@ -4,6 +4,10 @@ export class CreateIngredientDto {
   @IsString()
   name: string;
 
+  @IsOptional()
+  @IsString()
+  nameFa?: string;
+
   @IsString()
   baseUnit: string;
 
@@ -33,6 +37,10 @@ export class UpdateIngredientDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  nameFa?: string;
 
   @IsOptional()
   @IsString()

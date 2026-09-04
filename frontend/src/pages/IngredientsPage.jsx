@@ -7,7 +7,7 @@ export default function IngredientsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', allergens: '' });
+  const [form, setForm] = useState({ name: '', nameFa: '', unit: 'kg', cost_per_unit: '', supplier_id: '', allergens: '' });
   const [filter, setFilter] = useState('');
   const [error, setError] = useState('');
 
@@ -63,6 +63,7 @@ export default function IngredientsPage() {
     setEditItem(item);
     setForm({
       name: item.name,
+      nameFa: item.nameFa || '',
       unit: item.unit,
       cost_per_unit: item.cost_per_unit,
       supplier_id: item.supplier_id || '',
@@ -71,10 +72,11 @@ export default function IngredientsPage() {
     setShowForm(true);
   };
 
-  const resetForm = () => setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', allergens: '' });
+  const resetForm = () => setForm({ name: '', nameFa: '', unit: 'kg', cost_per_unit: '', supplier_id: '', allergens: '' });
 
   const filtered = ingredients.filter(i =>
     i.name.toLowerCase().includes(filter.toLowerCase()) ||
+    (i.nameFa && i.nameFa.includes(filter)) ||
     i.unit.toLowerCase().includes(filter.toLowerCase())
   );
 
@@ -113,7 +115,7 @@ export default function IngredientsPage() {
           type="text"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="🔍 جستجو..."
+          placeholder="🔍 جستجو بر اساس نام فارسی یا انگلیسی..."
           className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
         />
       </div>
@@ -125,14 +127,24 @@ export default function IngredientsPage() {
             <h3 className="text-lg font-bold mb-4">{editItem ? '✏️ ویرایش ماده' : '➕ ماده جدید'}</h3>
             {error && <div className="bg-red-50 text-red-700 px-4 py-2 rounded mb-4 text-sm">{error}</div>}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="نام ماده | Name"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
-                required
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="نام انگلیسی | English Name"
+                  className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                  required
+                />
+                <input
+                  type="text"
+                  value={form.nameFa}
+                  onChange={(e) => setForm({ ...form, nameFa: e.target.value })}
+                  placeholder="نام فارسی | Persian Name"
+                  className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                  dir="rtl"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <select
                   value={form.unit}
@@ -142,6 +154,7 @@ export default function IngredientsPage() {
                   <option value="kg">کیلو (kg)</option>
                   <option value="g">گرم (g)</option>
                   <option value="L">لیتر (L)</option>
+                  <option value="ea">عدد (ea)</option>
                   <option value="pcs">عدد (pcs)</option>
                   <option value="pack">بسته (pack)</option>
                   <option value="box">جعبه (box)</option>
@@ -196,7 +209,7 @@ export default function IngredientsPage() {
             <thead className="bg-green-900 text-white">
               <tr>
                 <th className="px-4 py-3 text-right">#</th>
-                <th className="px-4 py-3 text-right">نام</th>
+                <th className="px-4 py-3 text-right">نام | Name</th>
                 <th className="px-4 py-3 text-right">واحد</th>
                 <th className="px-4 py-3 text-right">هزینه/واحد</th>
                 <th className="px-4 py-3 text-right">موجودی</th>
@@ -209,7 +222,12 @@ export default function IngredientsPage() {
               {filtered.map((item, idx) => (
                 <tr key={item.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
-                  <td className="px-4 py-3 font-medium">{item.name}</td>
+                  <td className="px-4 py-3">
+                    <span className="font-medium">{item.name}</span>
+                    {item.nameFa && (
+                      <span className="block text-xs text-gray-500" dir="rtl">{item.nameFa}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span className="bg-gray-100 px-2 py-1 rounded text-xs">{item.unit}</span>
                   </td>

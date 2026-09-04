@@ -22,9 +22,9 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    const data = await api.post('/auth/login', { email, password });
-    // User object now includes permissions array from backend
+  const login = async (email) => {
+    // Email-only login — no password needed
+    const data = await api.post('/auth/login', { email });
     const userData = {
       ...data.user,
       permissions: data.user.permissions || [],
@@ -41,13 +41,11 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  // Helper: check if user has a specific permission
   const hasPermission = (permission) => {
     if (!user?.permissions) return false;
     return user.permissions.includes(permission);
   };
 
-  // Helper: check if user has ANY of the given permissions
   const hasAnyPermission = (...permissions) => {
     if (!user?.permissions) return false;
     return permissions.some(p => user.permissions.includes(p));

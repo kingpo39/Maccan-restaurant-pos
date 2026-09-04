@@ -16,6 +16,10 @@ export class CreateRecipeDto {
 
   @IsOptional()
   @IsString()
+  nameFa?: string;
+
+  @IsOptional()
+  @IsString()
   description?: string;
 
   @IsOptional()
@@ -48,6 +52,10 @@ export class UpdateRecipeDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  nameFa?: string;
 
   @IsOptional()
   @IsString()

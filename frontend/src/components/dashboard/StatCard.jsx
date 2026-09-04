@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 
 const trendColors = {
@@ -14,11 +15,17 @@ const iconBg = {
   purple: 'bg-purple-50 text-purple-600',
 };
 
-export function StatCard({ title, value, change, icon, iconColor = 'blue', subtitle, className = '' }) {
+export function StatCard({ title, value, change, icon, iconColor = 'blue', subtitle, className = '', link }) {
+  const navigate = useNavigate();
   const trend = change !== undefined ? (change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral') : null;
+  const clickable = !!link;
 
   return (
-    <Card hover className={className}>
+    <Card
+      hover
+      className={`${className} ${clickable ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200' : ''}`}
+      onClick={clickable ? () => navigate(link) : undefined}
+    >
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${iconBg[iconColor] || iconBg.blue}`}>
@@ -38,6 +45,9 @@ export function StatCard({ title, value, change, icon, iconColor = 'blue', subti
         )}
         {subtitle && (
           <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+        )}
+        {clickable && (
+          <p className="text-xs text-blue-600 mt-2 font-medium">کلیک کنید ← Click to open</p>
         )}
       </CardContent>
     </Card>

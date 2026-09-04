@@ -7,7 +7,7 @@ export default function RecipesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editRecipe, setEditRecipe] = useState(null);
-  const [form, setForm] = useState({ name: '', description: '', category: 'main', yield_qty: 1, waste_factor: 1.0, menu_price: '' });
+  const [form, setForm] = useState({ name: '', nameFa: '', description: '', category: 'main', yield_qty: 1, waste_factor: 1.0, menu_price: '' });
   const [recipeItems, setRecipeItems] = useState([]);
   const [nutrition, setNutrition] = useState({});
   const [allergens, setAllergens] = useState({});
@@ -41,6 +41,7 @@ export default function RecipesPage() {
       setEditRecipe(recipe);
       setForm({
         name: recipe.name,
+        nameFa: recipe.nameFa || '',
         description: recipe.description || '',
         category: recipe.category,
         yield_qty: recipe.yield_qty,
@@ -53,7 +54,7 @@ export default function RecipesPage() {
       } catch { setRecipeItems([]); }
     } else {
       setEditRecipe(null);
-      setForm({ name: '', description: '', category: 'main', yield_qty: 1, waste_factor: 1.0, menu_price: '' });
+      setForm({ name: '', nameFa: '', description: '', category: 'main', yield_qty: 1, waste_factor: 1.0, menu_price: '' });
       setRecipeItems([]);
     }
     setShowForm(true);
@@ -133,7 +134,10 @@ export default function RecipesPage() {
             {error && <div className="bg-red-50 text-red-700 px-4 py-2 rounded mb-4 text-sm">{error}</div>}
             <form onSubmit={handleSaveRecipe} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="نام دish" className="px-4 py-2 border rounded-lg" required />
+                <div className="space-y-2">
+                <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="English Name" className="w-full px-4 py-2 border rounded-lg" required />
+                <input type="text" value={form.nameFa} onChange={e => setForm({...form, nameFa: e.target.value})} placeholder="نام فارسی | Persian Name" className="w-full px-4 py-2 border rounded-lg" dir="rtl" />
+              </div>
                 <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="px-4 py-2 border rounded-lg">
                   <option value="main">غذای اصلی (Main)</option>
                   <option value="starter">پیش‌غذا (Starter)</option>
@@ -216,6 +220,7 @@ export default function RecipesPage() {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-lg">{r.name}</h3>
+                    {r.nameFa && <p className="text-sm text-gray-600" dir="rtl">{r.nameFa}</p>}
                     <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">{r.category}</span>
                   </div>
                   <p className="text-gray-500 text-xs mb-3">{r.description}</p>

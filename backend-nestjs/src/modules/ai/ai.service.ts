@@ -7,59 +7,74 @@ interface VoiceResult { reply: string; pendingOrder: any; }
 export class AiService {
   constructor(private prisma: PrismaService) {}
 
-  async transcribeAudio(file: any): Promise<string> {
-    return `[صوت ضبط شده - ${Math.round(file.size / 1024)}KB]`;
-  }
-
   async processVoiceCommand(transcript: string, context?: any): Promise<VoiceResult> {
-    const lower = transcript.toLowerCase();
+    const lower = transcript.toLowerCase().trim();
 
-    if (lower.includes('order') || lower.includes('سفارش') || lower.includes('بده') || lower.includes('ثبت کن'))
+    // ─── LIST ORDERS (must check BEFORE 'order' since 'orders' contains 'order') ───
+    if (lower.match(/\borders\b/) || lower.includes('سفارش') && lower.match(/ها|هاي|های|لیست|لی|show|list|view|all|active|فعال/)) {
+      // "orders" alone → list; "order table 3 two kebab" → create
+      if (lower.match(/\borders\b/) && !lower.match(/table|میز|\d/)) {
+        return { reply: await this.checkOrderStatus(), pendingOrder: null };
+      }
+      if (lower.includes('سفارش') && !lower.match(/میز|\d|order|بده|ثبت/)) {
+        return { reply: await this.checkOrderStatus(), pendingOrder: null };
+      }
+    }
+
+    // ─── CREATE ORDER ───
+    if (lower.includes('order') || lower.includes('سفارش') || lower.includes('بده') || lower.includes('ثبت کن')) {
       return this.handleVoiceOrder(transcript);
+    }
 
-    if (lower.includes('status') || lower.includes('وضعیت'))
+    if (lower.includes('status') || lower.includes('وضعیت') || lower.includes('.getCurrentStatus'))
       return { reply: await this.checkOrderStatus(), pendingOrder: null };
 
     if (lower.includes('cancel') || lower.includes('لغو'))
       return { reply: '❌ سفارش لغو شد.', pendingOrder: null };
 
-    if (lower.includes('موجودی') || lower.includes('انبار') || lower.includes('inventory')) {
+    if (lower.includes('موجودی') || lower.includes('انبار') || lower.includes('inventory') || lower.includes('stock')) {
       const count = await this.prisma.ingredient.count();
       return { reply: `📦 موجودی انبار: ${count} قلم مواد اولیه.`, pendingOrder: null };
     }
 
-    if (lower.includes('orders') || lower.includes('سفارش‌ها') || lower.includes('فعال')) {
-      const active = await this.prisma.order.count({ where: { status: { notIn: ['CLOSED', 'CANCELLED'] } } });
-      return { reply: `📋 سفارش‌های فعال: ${active}.`, pendingOrder: null };
-    }
-
-    if (lower.includes('منو') || lower.includes('غذا') || lower.includes('recipe') || lower.includes('menu'))
+    if (lower.includes('منو') || lower.includes('غذا') || lower.includes('recipe') || lower.includes('menu') || lower.includes('menu items'))
       return { reply: await this.listMenuItems(), pendingOrder: null };
 
-    if (lower.includes('دما') || lower.includes('temperature') || lower.includes('یخچال'))
+    if (lower.includes('دما') || lower.includes('temperature') || lower.includes('یخچال') || lower.includes('temp'))
       return { reply: '🌡️ پایش دمای هوشمند فعال.\nیخچال اصلی: 3.2°C ✅\nفریزر: -18.5°C ✅\nیخچال ماهی: 1.4°C ✅', pendingOrder: null };
 
-    if (lower.includes('تأمین') || lower.includes('supplier')) {
-      const count = await this.prisma.supplier.count();
-      return { reply: `🏪 تأمین‌کنندگان: ${count}.`, pendingOrder: null };
-    }
+    if (lower.includes('تأمین') || lower.includes('supplier'))
+      return { reply: `🏪 تأمین‌کنندگان: ${await this.prisma.supplier.count()}.`, pendingOrder: null };
 
     if (lower.includes('میز') || lower.includes('table'))
       return { reply: await this.listTables(), pendingOrder: null };
 
-    if (lower.includes('سلام') || lower.includes('hi') || lower.includes('hello'))
-      return { reply: '🤖 سلام! من دستیار هوشمند ماکان هستم.\n\nبرای ثبت سفارش:\n"order table 3 two kebab"\n"میز ۳ دو کباب برگ"\n\n📦 موجودی  📋 سفارش‌ها  🍳 منو  🌡️ دما', pendingOrder: null };
+    if (lower.includes('سلام') || lower.includes('hi') || lower.includes('hello') || lower.includes('hey'))
+      return { reply: '🤖 سلام! من دستیار هوشمند ماکان هستم.\n\nبرای ثبت سفارش:\n"order table 3 two kebab"\n"میز ۳ دو کباب برگ"\n\n📋 سفارش‌ها: "orders"\n📦 موجودی  🍳 منو  🌡️ دما', pendingOrder: null };
 
     if (lower.includes('کمک') || lower.includes('help'))
-      return { reply: '🤖 راهنمای دستیار صوتی:\n\n🎙 "order table 3 two kebab"\n"میز ۳ دو کباب برگ"\n\n📋 وضعیت: "status"\n❌ لغو: "cancel"\n📦 موجودی  🍳 منو  🌡️ دما  🪑 میزها', pendingOrder: null };
+      return { reply: '🤖 راهنمای دستیار صوتی:\n\n🎙 "order table 3 two kebab"\n"میز ۳ دو کباب برگ"\n\n📋 سفارش‌ها: "orders"\n❌ لغو: "cancel"\n📦 موجودی  🍳 منو  🌡️ دما  🪑 میزها', pendingOrder: null };
 
-    return { reply: `🤖 پیام دریافت شد: "${transcript}"\n\nبرای کمک بگویید: "کمک"`, pendingOrder: null };
+    // ─── REJECT UNTRANSCRIBED AUDIO / PLACEHOLDER TEXT ───
+    // The frontend used to send "[صوت ضبط شده - 10KB]" as text when speech-to-text failed.
+    // That placeholder must NEVER be parsed into an order.
+    if (/صوت ضبط شده|\[?صوت|KB\]|کیلوبایت/.test(transcript)) {
+      return { reply: '🎤 صدای شما شنیده نشد یا تشخیص داده نشد.\n\nدوباره امتحان کنید، یا از تایپ و دکمه‌های سریع استفاده کنید.\n\nمثال: "order table 3 two kebab" — "میز ۳ دو کباب برگ"', pendingOrder: null };    }
+
+    // ─── FALLBACK: try to match as a casual order ───
+    // If it has a number and looks like food, try parsing as order
+    const hasNum = /\d/.test(transcript);
+    if (hasNum && transcript.split(/\s+/).length <= 6) {
+      return this.handleVoiceOrder(transcript);
+    }
+
+    return { reply: `🤔 پیام دریافت شد.\n\nدستورات:\n📋 "orders" — لیست سفارش‌ها\n🎙 "order table 3 two kebab"\n📦 موجودی  🍳 منو  🌡️ دما`, pendingOrder: null };
   }
 
   private async handleVoiceOrder(transcript: string): Promise<VoiceResult> {
     const parsed = this.parseOrder(transcript);
     if (!parsed.items.length)
-      return { reply: '🤔 سفارش قابل تشخیص نیست.\nمثال: "order table 3 two kebab"\n"میز ۳ دو کباب برگ"\n\nمنو: "منو"', pendingOrder: null };
+      return { reply: '🤔 سفارش قابل تشخیص نیست.\nمثال: "order table 3 two kebab"\n"میز ۳ دو کباب برگ"\n\n📋 سفارش‌ها: "orders"\n🍳 منو: "menu"', pendingOrder: null };
 
     const matched: any[] = [];
     const unmatched: string[] = [];
@@ -70,7 +85,7 @@ export class AiService {
     }
 
     if (!matched.length)
-      return { reply: `❌ آیتمی در منو پیدا نشد.\n${unmatched.length ? `ناشناخته: ${unmatched.join(', ')}` : ''}`, pendingOrder: null };
+      return { reply: `❌ آیتمی در منو پیدا نشد.\n${unmatched.length ? `ناشناخته: ${unmatched.join(', ')}` : ''}\n\n🍳 منو: "menu"`, pendingOrder: null };
 
     let total = 0;
     let summary = `📋 پیش‌نویس سفارش | Draft Order\n🪑 میز: ${parsed.table || 'بیرون‌بر'}\n\n`;
@@ -107,12 +122,13 @@ export class AiService {
       include: { table: { select: { label: true } }, items: { include: { recipe: { select: { name: true } } } } },
       orderBy: { createdAt: 'desc' },
     });
-    if (!active.length) return '📋 سفارش فعالی نیست.';
+    if (!active.length) return '📋 سفارش فعالی نیست.\n\n🎙 برای ثبت سفارش جدید:\n"order table 3 two kebab"';
     let result = '📋 سفارش‌های فعال:\n\n';
     for (const o of active) {
       const items = o.items.map((i: any) => `${i.quantity}× ${i.recipe.name}`).join(', ');
       result += `#${o.id.slice(-6)} | میز ${o.table?.label || '?'} | ${o.status} | ${items}\n`;
     }
+    result += `\n总计: ${active.length} سفارش فعال`;
     return result;
   }
 
@@ -126,29 +142,31 @@ export class AiService {
     const wordNums: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
     const items: { name: string; quantity: number }[] = [];
 
-    // Remove the table phrase and action words so they are not parsed as dishes
     let rest = transcript
       .replace(/table\s*\d+/gi, ' ')
       .replace(/میز\s*شماره\s*\d+/g, ' ')
       .replace(/میز\s*\d+/g, ' ')
       .replace(/سفارش/gi, ' ')
-      .replace(/order/gi, ' ')
+      .replace(/\border\b/gi, ' ')
       .replace(/لطفا/gi, ' ')
       .trim();
 
-    // Split on quantity tokens: "یک کباب برگ و دو جوجه" -> qty token + name chunks
-    const qtyRe = /(یک|دو|سه|چهار|پنج|شش|هفت|هشت|نه|ده|one|two|three|four|five|six|seven|eight|nine|ten|\d+)/gi;
+    // Persian number words must NOT match inside other words (e.g. "ده" inside "شده")
+    const qtyRe = /((?<![\u0600-\u06FF])(?:یک|دو|سه|چهار|پنج|شش|هفت|هشت|نه|ده)(?![\u0600-\u06FF])|\b(?:one|two|three|four|five|six|seven|eight|nine|ten)\b|\d+)/gi;
     const parts = rest.split(qtyRe);
-    // parts[0] = text before first token, then alternating: token, name, token, name...
     for (let i = 1; i < parts.length; i += 2) {
       const token = (parts[i] || '').trim().toLowerCase();
       if (!token) continue;
-      let qty = persianNums[token] ?? wordNums[token] ?? parseInt(token) ?? 1;
+      const num = parseInt(token, 10);
+      let qty = persianNums[token] ?? wordNums[token] ?? (isNaN(num) ? 1 : num);
+      if (qty < 1) qty = 1;
+      if (qty > 99) qty = 99;
       const name = (parts[i + 1] || '')
         .replace(/[،,وand\s]+$/i, ' ')
-        .replace(/^[\s،,وand]+/i, ' ')
+        .replace(/^[\\s،,وand]+/i, ' ')
         .trim();
       if (!name) continue;
+      if (name.length < 2 || !/[\u0600-\u06FFa-zA-Z]/.test(name)) continue; // ignore punctuation-only fragments
       if (!items.some(it => it.name.toLowerCase() === name.toLowerCase()))
         items.push({ name, quantity: qty });
     }
@@ -159,14 +177,12 @@ export class AiService {
   private async findRecipe(name: string) {
     const lower = name.toLowerCase().trim();
 
-    // Exact-ish match on English OR Persian name
     let r = await this.prisma.recipe.findFirst({
       where: { OR: [{ name: { contains: lower } }, { nameFa: { contains: name.trim() } }] },
     });
 
-    // Keyword fallback over both fields (supports partial words like "kebab" / "کباب")
     if (!r) {
-      const keywords = lower.split(/\s+/).filter(k => k.length >= 2);
+      const keywords = lower.split(/\s+/).filter(k => k.length >= 2 && /[\u0600-\u06FFa-zA-Z]/.test(k));
       for (const k of keywords) {
         r = await this.prisma.recipe.findFirst({
           where: { OR: [{ name: { contains: k } }, { nameFa: { contains: k } }] },

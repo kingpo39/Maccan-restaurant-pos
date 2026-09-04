@@ -56,13 +56,13 @@ export class IngredientsService {
     const name = this.normalizeName(dto.name);
     const existing = await this.prisma.ingredient.findUnique({ where: { organizationId_locationId_name: { organizationId, locationId, name } } });
     if (existing) return this.findOne(existing.id, organizationId, locationId);
-    const ingredient = await this.prisma.ingredient.create({ data: { name, baseUnit: dto.baseUnit, category: dto.category, costPerUnit: dto.costPerUnit ?? 0, wasteFactor: dto.wasteFactor ?? 0, allergens: JSON.stringify(dto.allergens ?? []), supplierId: dto.supplierId, organizationId, locationId }, include: { supplier: { select: { id: true, name: true } } } });
+    const ingredient = await this.prisma.ingredient.create({ data: { name, nameFa: dto.nameFa, baseUnit: dto.baseUnit, category: dto.category, costPerUnit: dto.costPerUnit ?? 0, wasteFactor: dto.wasteFactor ?? 0, allergens: JSON.stringify(dto.allergens ?? []), supplierId: dto.supplierId, organizationId, locationId }, include: { supplier: { select: { id: true, name: true } } } });
     return this.mapIngredient(ingredient);
   }
 
   async update(id: string, dto: UpdateIngredientDto, organizationId: string, locationId: string) {
     await this.findOne(id, organizationId, locationId);
-    const ingredient = await this.prisma.ingredient.update({ where: { id }, data: { name: dto.name === undefined ? undefined : this.normalizeName(dto.name), baseUnit: dto.baseUnit, category: dto.category, costPerUnit: dto.costPerUnit, wasteFactor: dto.wasteFactor, allergens: dto.allergens === undefined ? undefined : JSON.stringify(dto.allergens), supplierId: dto.supplierId }, include: { supplier: { select: { id: true, name: true } } } });
+    const ingredient = await this.prisma.ingredient.update({ where: { id }, data: { name: dto.name === undefined ? undefined : this.normalizeName(dto.name), nameFa: dto.nameFa, baseUnit: dto.baseUnit, category: dto.category, costPerUnit: dto.costPerUnit, wasteFactor: dto.wasteFactor, allergens: dto.allergens === undefined ? undefined : JSON.stringify(dto.allergens), supplierId: dto.supplierId }, include: { supplier: { select: { id: true, name: true } } } });
     return this.mapIngredient(ingredient);
   }
 
